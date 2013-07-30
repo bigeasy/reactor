@@ -1,0 +1,28 @@
+{
+    "name" : "reactor",
+    "description" : "A dependency-graph driven build framework.",
+    "version": "0.0.0",
+    "url" : "http://bigeasy.github.com/reactor",
+    "keywords" : [
+      "build", "dependency", "graph", "make", "rake", "javascript"
+    ],
+    "author" : "Alan Gutierrez <alan@prettyrobots.com>",
+    "contributors" : [],
+    "devDependencies":
+    {
+        "proof": "0.0.33"
+    },
+    "dependencies":
+    {
+    },
+    "repository":
+    {
+        "type": "git",
+        "url": "http://github.com/bigeasy/reactor.git"
+    },
+    "bugs": "https://github.com/bigeasy/reactor/issues",
+    "scripts":
+    {
+        "test": "proof platform win32 && proof test */*/*.t.js || t/test"
+    }
+}
