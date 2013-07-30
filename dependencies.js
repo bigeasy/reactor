@@ -14,7 +14,7 @@ function Artifact () {
 Artifact.prototype.make = function () {
 }
 
-Artifact.prototype.dependencies = function ()
+Artifact.prototype.dependencies = function (){
 }
 
 function Application () {
@@ -37,7 +37,7 @@ Catenate.prototype.register = cadence(function (step, registrar) {
 function Project () {
 }
 
-Project.prorotype.register = cadence(function (step, registrar) {
+Project.prototype.register = cadence(function (step, registrar) {
     step(function (component) {
         component.register(registrar, step())
     })(this._components)
@@ -56,6 +56,9 @@ Project.prorotype.register = cadence(function (step, registrar) {
 // ensure that they are only run as needed.
 
 
+function Reactor () {
+}
+
 Reactor.prototype.rule = cadence(function (step) {
     step(function () {
 
@@ -64,11 +67,38 @@ Reactor.prototype.rule = cadence(function (step) {
 
 function Trigger () {
 }
-Trigger.prototype.x = () {
+Trigger.prototype.x = function () {
 }
 
 function Builder () {
 }
 
 Builder.prototype.rebuild = function () {
+}
+
+// How do I say I want to build something?
+
+function reactor () {
+}
+
+// targets and dependencies, plus a function to build them. We might want to
+// glob targets, but if they've not yet been built, well, glob, then transform.
+// Let's use LESS as an example.
+//
+// We might say that all `%.less` in a particular directory become public
+// `%.css` in another directory. The `%.css` are built by transforming the
+// `%.less` to `%css` though the less compiler. The name of the `%.css` file is
+// the same as the `%.less` file except for the extension.
+//
+// The `%.less` files might contain dependant less files. We don't want to
+// compel the user to specify these depedencies in the language the way it's
+// done in Make. Why not? Well, becuase Make assumes a UNIX environment where
+// the command line program builds each artifact from dependencies specified on
+// the command line. Well, actually, that doesn't even work well for Make and
+// it's primary task, building C programs, because header files are many and
+// devined by the C compiler, there's actually some sort of dependency
+// generation step with complicatd C builds as well.
+
+module.styles = function (registrar) {
+    var artifact = registrar.artifact()
 }
