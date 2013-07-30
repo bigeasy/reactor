@@ -1,0 +1,15 @@
+Reactor
+
+A dependency-graph driven build framework.
+
+    Documentation:  http://bigeasy.github.io/reactor
+    Source:         http://github.io/bigeasy/reactor
+    Issues:         http://github.com/bigeasy/reactor/issues
+
+    Install:        `npm install reactor`
+
+    License:        MIT
+
+To learn everything you want to know about Reactor start here:
+
+    http://bigeasy.github.io/reactor
