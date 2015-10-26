@@ -2,7 +2,7 @@ require('proof')(2, require('cadence')(prove))
 
 function prove (async, assert) {
     var Reactor = require('../..')
-    var turnstile = require('turnstile')
+    var Turnstile = require('turnstile')
     var abend = require('abend')
 
     new Reactor({
@@ -50,25 +50,30 @@ function prove (async, assert) {
     // the first exception, what gets reported when we throw. I'm happy with how
     // that sorted out.
 
+    var expected = []
     var reservoir, consumed = false, waiting = function (values, callback) {
-        assert(values, [ 1, 3, 5 ], 'queued')
+        assert(values, expected.shift(), 'queued')
         callback()
     }
-    function operation (values, callback) {
+    function operation (state, values, callback) {
         consumed = true
         waiting(values, callback)
     }
 
     async(function () {
+        expected = [ [ 1, 3, 5 ], [ 6 ] ]
         reservoir = new Reactor({
-            turnstile: new turnstile.Turnstile({ workers: 1 }),
-            catcher: function () {},
+            turnstile: new Turnstile({ workers: 1 }),
+            groupBy: function (value) { return value % 2 },
             operation: operation
         })
-        reservoir.write([ 1, 3, 5 ], async())
+        reservoir.write([ 1, 3, 5, 6 ], async())
     }, function () {
+        reservoir = new Reactor({
+            turnstile: new Turnstile({ workers: 1 }),
+            operation: operation
+        })
         var wait = async()
-        assert(consumed, 'done')
         waiting = function (values, callback) {
             callback()
             wait()

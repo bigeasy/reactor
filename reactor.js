@@ -56,13 +56,13 @@ Reservoir.prototype.write = function (items, callback) {
     }
 }
 
-Reservoir.prototype._consume = cadence(function (async, key) {
+Reservoir.prototype._consume = cadence(function (async, state, key) {
     var buffer = this._buffers[key]
     delete this._buffers[key]
     async([function () {
         this.count -= buffer.values.length
     }], function () {
-        this._operation.apply([ buffer.values ].concat(async()))
+        this._operation.apply([ state, buffer.values ].concat(async()))
     })
 })
 
