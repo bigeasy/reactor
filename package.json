@@ -1,23 +1,25 @@
 {
     "name":               "reactor",
-    "description":        "A dependency-graph driven build framework.",
+    "description":        "A work queue that pivots events to error-first callbacks.",
     "author":             "Alan Gutierrez <alan@prettyrobots.com>",
     "version":            "0.0.0",
-    "url":                "http://bigeasy.github.com/reactor",
+    "homepage":                "http://bigeasy.github.com/reactor",
     "keywords":
     [
                           "build", "dependency", "graph", "make", "rake", "javascript"
     ],
-    "contributors":
-    [],
-    "devDependencies":
-    {
-                          "proof":      "0.0.36",
-                          "less":       "*"
-    },
+    "license":              "MIT",
+    "main":                 "reactor",
     "dependencies":
     {
-                          "cadence":    "*"
+                            "abend":            "0.0.2",
+                            "operation":        "0.0.2",
+                            "turnstile":        "0.0.14"
+    },
+    "devDependencies":
+    {
+                            "cadence":    "0.4.1",
+                            "proof":      "0.0.56"
     },
     "repository":
     {
