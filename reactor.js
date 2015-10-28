@@ -4,14 +4,14 @@ var cadence = require('cadence'),
 
 function noop () {}
 
-function Reservoir (options) {
+function Reactor (options) {
     this.turnstile = options.turnstile
     this._groupBy = options.groupBy || function () { return 1 }
     this._buffers = {}
     this._operation = new Operation(options.operation)
 }
 
-Reservoir.prototype.write = function (items, callback) {
+Reactor.prototype.write = function (items, callback) {
     var catcher = this._catcher, seen = {}, created = [], buffers = 0, callbacks = 0, fiasco
 
     callback || (callback = noop)
@@ -56,7 +56,7 @@ Reservoir.prototype.write = function (items, callback) {
     }
 }
 
-Reservoir.prototype._consume = cadence(function (async, state, key) {
+Reactor.prototype._consume = cadence(function (async, state, key) {
     var buffer = this._buffers[key]
     delete this._buffers[key]
     async([function () {
@@ -66,4 +66,4 @@ Reservoir.prototype._consume = cadence(function (async, state, key) {
     })
 })
 
-module.exports = Reservoir
+module.exports = Reactor

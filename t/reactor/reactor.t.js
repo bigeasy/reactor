@@ -51,7 +51,7 @@ function prove (async, assert) {
     // that sorted out.
 
     var expected = []
-    var reservoir, consumed = false, waiting = function (values, callback) {
+    var reactor, consumed = false, waiting = function (values, callback) {
         assert(values, expected.shift(), 'queued')
         callback()
     }
@@ -62,14 +62,14 @@ function prove (async, assert) {
 
     async(function () {
         expected = [ [ 1, 3, 5 ], [ 6 ] ]
-        reservoir = new Reactor({
+        reactor = new Reactor({
             turnstile: new Turnstile({ workers: 1 }),
             groupBy: function (value) { return value % 2 },
             operation: operation
         })
-        reservoir.write([ 1, 3, 5, 6 ], async())
+        reactor.write([ 1, 3, 5, 6 ], async())
     }, function () {
-        reservoir = new Reactor({
+        reactor = new Reactor({
             turnstile: new Turnstile({ workers: 1 }),
             operation: operation
         })
@@ -78,6 +78,6 @@ function prove (async, assert) {
             callback()
             wait()
         }
-        reservoir.write([ 1, 3, 5 ])
+        reactor.write([ 1, 3, 5 ])
     })
 }
