@@ -1,12 +1,12 @@
 {
-    "name":               "reactor",
-    "description":        "A work queue that pivots events to error-first callbacks.",
-    "author":             "Alan Gutierrez <alan@prettyrobots.com>",
-    "version":            "0.0.0",
-    "homepage":                "http://bigeasy.github.com/reactor",
+    "name":                 "reactor",
+    "description":          "A work queue that pivots events to error-first callbacks.",
+    "author":               "Alan Gutierrez <alan@prettyrobots.com>",
+    "version":              "0.0.0",
+    "homepage":             "http://bigeasy.github.com/reactor",
     "keywords":
     [
-                          "build", "dependency", "graph", "make", "rake", "javascript"
+                            "queue", "asynchronous", "graph", "make", "rake", "javascript"
     ],
     "license":              "MIT",
     "main":                 "reactor",
@@ -23,10 +23,10 @@
     },
     "repository":
     {
-                          "type": "git",
-                          "url": "http://github.com/bigeasy/reactor.git"
+                            "type": "git",
+                            "url": "http://github.com/bigeasy/reactor.git"
     },
-    "bugs":               "https://github.com/bigeasy/reactor/issues",
+    "bugs":                 "https://github.com/bigeasy/reactor/issues",
     "scripts":
     {
         "test": "proof platform win32 && proof test */*/*.t.js || t/test"
