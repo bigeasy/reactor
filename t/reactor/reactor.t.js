@@ -59,7 +59,10 @@ function prove (async, assert) {
         var wait = async()
         waiting = function (status, callback) {
             assert(true, 'called')
-            wait()
+            reactor.check()
+            waiting = function (status, callback) {
+                wait()
+            }
             callback()
         }
         reactor.check(async())
