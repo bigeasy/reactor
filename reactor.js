@@ -1,71 +1,71 @@
-var cadence = require('cadence'),
+var Turnstile = require('turnstile'),
+    cadence = require('cadence'),
     Operation = require('operation'),
     abend = require('abend'),
     push = [].push,
     slice = [].slice
 
 function Reactor (options) {
-    this.turnstile = options.turnstile
+    this.turnstile = options.turnstile || new Turnstile
     this.count = 0
     this._operation = new Operation(options.operation)
+    this._enqueued = { check: {}, set: {} }
     this._values = { system: {}, user: {} }
 }
 
-Reactor.prototype.push = function (key, values, callback) {
-    var vargs = slice.call(arguments), map = 'system', key = 'default'
-    if (typeof vargs[0] == 'string') {
-        map = 'user'
-        key = vargs.shift()
-
-    }
-    var entry = this._entry(map, key, [])
-    push.apply(entry.values, vargs[0])
-    this.count += vargs[0].length
-    if (vargs[1]) entry.callbacks.push(vargs[1])
+Reactor.prototype.push = function (value, callback) {
+    this.count++
+    this.turnstile.enter({
+        object: this, method: '_pop'
+    }, [ value ], function (error) {
+        abend(error)
+        if (callback) callback()
+    })
     this.turnstile.nudge(abend)
 }
 
-Reactor.prototype.check = function () {
-    var vargs = slice.call(arguments), map = 'system', key = 'default'
-    if (typeof vargs[0] == 'string') {
-        map = 'user'
-        key = String(vargs.shift())
-    }
-    var entry = this._entry(map, key, true)
-    this.count++
-    if (vargs[0]) entry.callbacks.push(vargs[0])
+Reactor.prototype._pop = cadence(function (async, state, value) {
+    async([function () {
+        this.count--
+    }], function () {
+        this._operation.apply([ state, value ].concat(async()))
+    })
+})
+
+Reactor.prototype.set = function (key, callback) {
+    var map = 'set'
+    var callbacks = this._entry(map, key)
+    if (callback) callbacks.push(callback)
+    this.turnstile.nudge(abend)
+}
+
+Reactor.prototype.check = function (callback) {
+    var map = 'check', key = 'default'
+    var callbacks = this._entry(map, key)
+    if (callback) callbacks.push(callback)
     this.turnstile.nudge(abend)
 }
 
 Reactor.prototype._entry = function (map, key, initial) {
-    var entry = this._values[map][key]
-    if (!entry) {
-        entry = this._values[map][key] = { callbacks: [], values: initial }
+    var callbacks = this._enqueued[map][key]
+    if (!callbacks) {
+        this.count++
+        callbacks = this._enqueued[map][key] = []
         this.turnstile.enter({
-            object: this, method: '_consume'
+            object: this, method: '_unset'
         }, [ map, key ], function (error) {
             abend(error)
-            entry.callbacks.forEach(function (callback) { callback() })
+            callbacks.forEach(function (callback) { callback() })
         })
     }
-    return entry
+    return callbacks
 }
 
-Reactor.prototype._consume = cadence(function (async, state, map, key) {
-    var entry = this._values[map][key], count, vargs
-    delete this._values[map][key]
-    if (typeof entry.values == 'boolean') {
-        count = 1
-        vargs = [ state ]
-    } else {
-        count = entry.values.length
-        vargs = [ state, entry.values ]
-    }
-    if (map != 'system') {
-        vargs.push(key)
-    }
+Reactor.prototype._unset = cadence(function (async, state, map, key) {
+    delete this._enqueued[map][key]
+    var vargs = map == 'check' ? [ state ] : [ state, key ]
     async([function () {
-        this.count -= count
+        this.count--
     }], function () {
         this._operation.apply(vargs.concat(async()))
     })
