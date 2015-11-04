@@ -1,68 +1,73 @@
 var cadence = require('cadence'),
+    Operation = require('operation'),
     abend = require('abend'),
-    Operation = require('operation')
-
-function noop () {}
+    push = [].push,
+    slice = [].slice
 
 function Reactor (options) {
     this.turnstile = options.turnstile
-    this._groupBy = options.groupBy || function () { return 1 }
-    this._buffers = {}
+    this.count = 0
     this._operation = new Operation(options.operation)
+    this._values = { system: {}, user: {} }
 }
 
-Reactor.prototype.write = function (items, callback) {
-    var catcher = this._catcher, seen = {}, created = [], buffers = 0, callbacks = 0, fiasco
+Reactor.prototype.push = function (key, values, callback) {
+    var vargs = slice.call(arguments), map = 'system', key = 'default'
+    if (typeof vargs[0] == 'string') {
+        map = 'user'
+        key = vargs.shift()
 
-    callback || (callback = noop)
-
-    var seen = {}
-
-    this.count += items.length
-
-    items.forEach(function (item) {
-        var key = (this._groupBy)(item), buffer
-
-        seen[key] = true
-
-        if (!(buffer = this._buffers[key])) {
-            this._buffers[key] = buffer = { values: [], callbacks: [] }
-            created.push(key)
-        }
-
-        buffer.values.push(item)
-    }, this)
-
-    Object.keys(seen).forEach(function (key) {
-        var buffer = this._buffers[key]
-        buffer.callbacks.push(complete)
-        buffers++
-    }, this)
-
-    created.forEach(function (key) {
-        var buffer = this._buffers[key]
-        this.turnstile.enter(this, this._consume, [ key ], function (error) {
-            abend(error)
-            buffer.callbacks.forEach(function (callback) { callback() })
-        })
-    }, this)
-
-    this.turnstile.nudge(abend)
-
-    function complete () {
-        if (++callbacks == buffers) {
-            callback()
-        }
     }
+    var entry = this._entry(map, key, [])
+    push.apply(entry.values, vargs[0])
+    this.count += vargs[0].length
+    if (vargs[1]) entry.callbacks.push(vargs[1])
+    this.turnstile.nudge(abend)
 }
 
-Reactor.prototype._consume = cadence(function (async, state, key) {
-    var buffer = this._buffers[key]
-    delete this._buffers[key]
+Reactor.prototype.check = function () {
+    var vargs = slice.call(arguments), map = 'system', key = 'default'
+    if (typeof vargs[0] == 'string') {
+        map = 'user'
+        key = String(vargs.shift())
+    }
+    var entry = this._entry(map, key, true)
+    this.count++
+    if (vargs[0]) entry.callbacks.push(vargs[0])
+    this.turnstile.nudge(abend)
+}
+
+Reactor.prototype._entry = function (map, key, initial) {
+    var entry = this._values[map][key]
+    if (!entry) {
+        entry = this._values[map][key] = { callbacks: [], values: initial }
+        this.turnstile.enter({
+            object: this, method: '_consume'
+        }, [ map, key ], function (error) {
+            abend(error)
+            entry.callbacks.forEach(function (callback) { callback() })
+        })
+    }
+    return entry
+}
+
+Reactor.prototype._consume = cadence(function (async, state, map, key) {
+    var entry = this._values[map][key], count, vargs
+    delete this._values[map][key]
+    if (typeof entry.values == 'boolean') {
+        count = 1
+        vargs = [ state ]
+    } else {
+        count = entry.values.length
+        vargs = [ state, entry.values ]
+    }
+    if (map != 'system') {
+        vargs.push(key)
+    }
     async([function () {
-        this.count -= buffer.values.length
+        this.count -= count
     }], function () {
-        this._operation.apply([ state, buffer.values ].concat(async()))
+        this._operation.apply(vargs.concat(async()))
     })
 })
 
