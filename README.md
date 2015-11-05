@@ -63,7 +63,7 @@ Reactor as a set of items to check.
 
 Let's create a service that pulls work from a database.
 
-```
+```javascript
 var database = require('database')
 
 function Service (processor) {
