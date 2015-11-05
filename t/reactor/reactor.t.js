@@ -6,17 +6,12 @@ function prove (async, assert) {
     var abend = require('abend')
     var slice = [].slice
 
-    new Reactor({
-        operation: function () {}
-    })
+    new Reactor(function () {})
 
     var waiting = null
-    var reactor = new Reactor({
-        turnstile: new Turnstile({ workers: 1 }),
-        operation: function () {
-            waiting.apply(this, slice.call(arguments))
-        }
-    })
+    var reactor = new Reactor(function () {
+        waiting.apply(this, slice.call(arguments))
+    }, new Turnstile({ workers: 1 }))
 
     async(function () {
         var wait = async()

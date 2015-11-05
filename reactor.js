@@ -5,10 +5,10 @@ var Turnstile = require('turnstile'),
     push = [].push,
     slice = [].slice
 
-function Reactor (options) {
-    this.turnstile = options.turnstile || new Turnstile
+function Reactor (operation, turnstile) {
+    this.turnstile = turnstile || new Turnstile
     this.count = 0
-    this._operation = new Operation(options.operation)
+    this._operation = new Operation(operation)
     this._enqueued = { check: {}, set: {} }
     this._values = { system: {}, user: {} }
 }
