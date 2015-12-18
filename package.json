@@ -19,7 +19,7 @@
     "devDependencies":
     {
                             "cadence":    "0.4.1",
-                            "proof":      "0.0.56"
+                            "proof":      "0.0.57"
     },
     "repository":
     {
