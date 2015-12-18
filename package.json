@@ -14,7 +14,7 @@
     {
                             "abend":            "0.0.2",
                             "operation":        "0.0.2",
-                            "turnstile":        "0.0.19"
+                            "turnstile":        "0.0.20"
     },
     "devDependencies":
     {
