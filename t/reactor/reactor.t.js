@@ -2,16 +2,18 @@ require('proof')(4, require('cadence')(prove))
 
 function prove (async, assert) {
     var Reactor = require('../..')
-    var Turnstile = require('turnstile')
     var abend = require('abend')
     var slice = [].slice
 
     new Reactor(function () {})
 
     var waiting = null
-    var reactor = new Reactor(function () {
-        waiting.apply(this, slice.call(arguments))
-    }, new Turnstile({ workers: 1 }))
+    var reactor = new Reactor({
+        operation: function () {
+            waiting.apply(this, slice.call(arguments))
+        },
+        workers: 1
+    })
 
     async(function () {
         var wait = async()
