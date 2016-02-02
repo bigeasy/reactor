@@ -13,7 +13,7 @@
     "dependencies":
     {
                             "abend":            "1.0.x",
-                            "operation":        "1.0.x",
+                            "operation":        "1.x",
                             "turnstile":        "1.0.x"
     },
     "devDependencies":
