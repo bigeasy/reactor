@@ -12,7 +12,7 @@
     "main":                 "reactor",
     "dependencies":
     {
-                            "abend":            "1.0.x",
+                            "abend":            "1.x",
                             "operation":        "1.x",
                             "turnstile":        "1.x"
     },
