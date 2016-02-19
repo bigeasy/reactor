@@ -8,7 +8,7 @@ It is designed with Cadence in mind, but you can use it with your own eror-first
 callbacks, just follow the rules.
 
 Reactor is based on [Turnstile](https://github.com/bigeasy/turnstile) so it can
-perform parallel operations in an orderly fasion;
+perform parallel operations in an orderly fashion;
 
  * with a runtime adjustable limit on the number of concurrent operations,
  * with a fifo queue that can be measured and monitored instead of using the
