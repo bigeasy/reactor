@@ -53,7 +53,7 @@ reactor.push({ item: 2 })
 ```
 
 You can either push and wait, or else you can push and forget. To push and wait,
-provdie a callback. It will be called when the work has been consumed. To push
+provide a callback. It will be called when the work has been consumed. To push
 and forget, just submit your work and move on.
 
 There are some times when you want to keep a queue outside of the Reactor,
@@ -110,9 +110,9 @@ Reactors create a separate asynchronous stack in which to do your work. Within
 that stack, you're supposed to handle any errors. There is no way for any
 asynchronous error or thrown exception to propagate out to the method that
 called `push` or `check`. If an asynchronous error is returned to the callback,
-Reactor will raise an uncatchable exception garauneteed to unwind your program.
+Reactor will raise an uncatchable exception guaranteed to unwind your program.
 
-The garunetee is a Good Thing. It means that you won't swallow errors, you won't
+The guarantee is a Good Thing. It means that you won't swallow errors, you won't
 have exceptions caught by overly clever error handlers and fed to some event
 handler you know nothing about.
 
@@ -130,7 +130,7 @@ function or an object with an `object` and `method` property.
 #### `reactor.push(work, [callback])`
 
 Push work into the queue. If given a `callback`, the callback will be called
-when the work is cosumed. The `callback` will never return value because errors
+when the work is consumed. The `callback` will never return value because errors
 do not propagate up and out of the work queue.
 
 Do not mix with `set` and `check`.
@@ -139,16 +139,16 @@ Do not mix with `set` and `check`.
 
 Add a single item of work the work queue that will call the worker with optional
 key. If given a `callback`, the callback will be called when the work is
-cosumed. The `callback` will never return value because errors do not propagate
+consumed. The `callback` will never return value because errors do not propagate
 up and out of the work queue.
 
 Do not mix with `push` and `check`.
 
 #### `reactor.check([callback])`
 
-Adds a single, undistinquished work entry into the work queue if no such entry
+Adds a single, undistinguished work entry into the work queue if no such entry
 already exists. If given a `callback`, the callback will be called when the work
-is cosumed. The `callback` will never return value because errors do not
+is consumed. The `callback` will never return value because errors do not
 propagate up and out of the work queue.
 
 
