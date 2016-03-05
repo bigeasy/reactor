@@ -9,7 +9,7 @@ function Reactor (options) {
     options.operation || (options = { operation: options })
     this.turnstile = new Turnstile({
         Date: options.Date,
-        workers: options.workers,
+        turnstiles: options.turnstiles,
         timeout: options.timeout
     })
     this.count = 0
