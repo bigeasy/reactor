@@ -63,6 +63,6 @@ function prove (async, assert) {
     }, function () {
         setImmediate(async())
     }, function () {
-        assert(reactor.turnstile.health, { occupied: 0, waiting: 0, rejecting: 0, turnstiles: 1 }, 'health')
+        assert(reactor.gate.health, { occupied: 0, waiting: 0, rejecting: 0, turnstiles: 1 }, 'health')
     })
 }
