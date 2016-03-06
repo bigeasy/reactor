@@ -2,7 +2,7 @@
     "name":                 "reactor",
     "description":          "A work queue that pivots events to error-first callbacks.",
     "author":               "Alan Gutierrez <alan@prettyrobots.com>",
-    "version":              "2.0.0",
+    "version":              "2.1.0",
     "homepage":             "http://bigeasy.github.com/reactor",
     "keywords":
     [
