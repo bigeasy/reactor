@@ -1,4 +1,4 @@
-var Gate = require('turnstile'),
+var Turnstiles = require('turnstile'),
     cadence = require('cadence'),
     Operation = require('operation'),
     abend = require('abend'),
@@ -7,7 +7,7 @@ var Gate = require('turnstile'),
 
 function Reactor (options) {
     options.operation || (options = { operation: options })
-    this.gate = new Gate({
+    this.turnstiles = new Turnstiles({
         Date: options.Date,
         turnstiles: options.turnstiles,
         timeout: options.timeout
@@ -20,13 +20,13 @@ function Reactor (options) {
 
 Reactor.prototype.push = function (value, callback) {
     this.count++
-    this.gate.enter({
+    this.turnstiles.enter({
         object: this, method: '_pop'
     }, [ value ], function (error) {
         abend(error)
         if (callback) callback()
     })
-    this.gate.nudge(abend)
+    this.turnstiles.nudge(abend)
 }
 
 Reactor.prototype._pop = cadence(function (async, state, value) {
@@ -41,14 +41,14 @@ Reactor.prototype.set = function (key, callback) {
     var map = 'set'
     var callbacks = this._entry(map, key)
     if (callback) callbacks.push(callback)
-    this.gate.nudge(abend)
+    this.turnstiles.nudge(abend)
 }
 
 Reactor.prototype.check = function (callback) {
     var map = 'check', key = 'default'
     var callbacks = this._entry(map, key)
     if (callback) callbacks.push(callback)
-    this.gate.nudge(abend)
+    this.turnstiles.nudge(abend)
 }
 
 Reactor.prototype._entry = function (map, key, initial) {
@@ -56,7 +56,7 @@ Reactor.prototype._entry = function (map, key, initial) {
     if (!callbacks) {
         this.count++
         callbacks = this._enqueued[map][key] = []
-        this.gate.enter({
+        this.turnstiles.enter({
             object: this, method: '_unset'
         }, [ map, key ], function (error) {
             abend(error)
