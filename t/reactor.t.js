@@ -1,7 +1,7 @@
 require('proof')(5, require('cadence')(prove))
 
 function prove (async, assert) {
-    var Reactor = require('../..')
+    var Reactor = require('..')
     var abend = require('abend')
     var slice = [].slice
 
