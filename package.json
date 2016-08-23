@@ -1,34 +1,38 @@
 {
     "name":                 "reactor",
-    "description":          "A work queue that pivots events to error-first callbacks.",
-    "author":               "Alan Gutierrez <alan@prettyrobots.com>",
     "version":              "2.2.1",
-    "homepage":             "http://bigeasy.github.com/reactor",
+    "description":
+
+      "A work queue that pivots events to error-first callbacks.",
+
     "keywords":
     [
-                            "queue", "asynchronous", "graph", "make", "rake", "javascript"
+                            "queue", "asynchronous", "graph", "make", "rake",
+                            "javascript"
     ],
+    "author":               "Alan Gutierrez <alan@prettyrobots.com>",
+    "homepage":             "http://bigeasy.github.com/reactor",
+    "bugs":                 "https://github.com/bigeasy/reactor/issues",
     "license":              "MIT",
-    "main":                 "reactor",
-    "dependencies":
-    {
-                            "abend":            "1.x",
-                            "operation":        "1.x",
-                            "turnstile":        "2.x"
-    },
-    "devDependencies":
-    {
-                            "cadence":          "1.x",
-                            "proof":            "1.x"
-    },
     "repository":
     {
                             "type": "git",
                             "url": "http://github.com/bigeasy/reactor.git"
     },
-    "bugs":                 "https://github.com/bigeasy/reactor/issues",
+    "dependencies":
+    {
+                            "abend":                        "1.0.x",
+                            "operation":                    "1.0.x",
+                            "turnstile":                    "2.0.x"
+    },
+    "devDependencies":
+    {
+                            "cadence":                      "1.0.x",
+                            "proof":                        "1.0.x"
+    },
+    "main":                 "reactor",
     "scripts":
     {
-        "test": "proof platform win32 && proof test */*/*.t.js || t/test"
+                            "test": "proof platform win32 && proof test */*/*.t.js || t/test"
     }
 }
