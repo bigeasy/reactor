@@ -1,9 +1,7 @@
 var Turnstile = require('turnstile'),
     cadence = require('cadence'),
     Operation = require('operation'),
-    abend = require('abend'),
-    push = [].push,
-    slice = [].slice
+    abend = require('abend')
 
 function Reactor (options) {
     options.operation || (options = { operation: options })
