@@ -28,7 +28,7 @@
     "devDependencies":
     {
                             "cadence":                      "1.0.x",
-                            "proof":                        "1.1.x"
+                            "proof":                        "1.2.x"
     },
     "main":                 "reactor",
     "scripts":
