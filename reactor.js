@@ -8,8 +8,7 @@ function Reactor (options) {
     this.turnstile = new Turnstile({
         Date: options.Date,
         turnstiles: options.turnstiles,
-        timeout: options.timeout,
-        immediate: options.immediate
+        timeout: options.timeout
     })
     this.count = 0
     this._operation = new Operation(options.operation)
