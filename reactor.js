@@ -13,6 +13,23 @@ function Constructor (object, dispatch) {
     this._dispatch = dispatch
 }
 
+Constructor.prototype.dispatch = function () {
+    var vargs = Array.prototype.slice.call(arguments)
+    this._dispatch[vargs.shift()] = Operation(vargs, { object: this._object })
+}
+
+function handle (turnstile, operation) {
+    return function (request, response, next) {
+        turnstile.push({
+            operation: operation,
+            request: request,
+            response: response,
+            vargs: Array.prototype.slice.call(arguments, 3),
+            next: next
+        })
+    }
+}
+
 function Reactor (object, configurator) {
     var constructor = new Constructor(object, this._dispatch = {})
     configurator(constructor)
@@ -26,11 +43,6 @@ function Reactor (object, configurator) {
     for (var pattern in this._dispatch) {
         this._dispatch[pattern] = handle(this.turnstile, this._dispatch[pattern])
     }
-}
-
-Constructor.prototype.dispatch = function () {
-    var vargs = Array.prototype.slice.call(arguments)
-    this._dispatch[vargs.shift()] = Operation(vargs, { object: this._object })
 }
 
 Reactor.prototype.createDispatcher = function () {
@@ -49,6 +61,22 @@ Reactor.prototype.createMiddleware = function () {
 Reactor.prototype._timeout = cadence(function (async, request) {
     request.raise(503, 'Service Not Available')
 })
+
+function createProperties (properties) {
+    return {
+        statusCode: properties.statusCode,
+        headers: properties.headers || {},
+        description: properties.description || 'Unknown'
+    }
+}
+
+function raise (statusCode, description, headers) {
+    throw interrupt('http', createProperties({
+        statusCode: statusCode,
+        description: description,
+        headers: headers
+    }))
+}
 
 Reactor.prototype._respond = cadence(function (async, envelope) {
     var work = envelope.body
@@ -156,36 +184,6 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
     })()
 })
 
-module.exports = Reactor
-
-function handle (turnstile, operation) {
-    return function (request, response, next) {
-        turnstile.push({
-            operation: operation,
-            request: request,
-            response: response,
-            vargs: Array.prototype.slice.call(arguments, 3),
-            next: next
-        })
-    }
-}
-
-function createProperties (properties) {
-    return {
-        statusCode: properties.statusCode,
-        headers: properties.headers || {},
-        description: properties.description || 'Unknown'
-    }
-}
-
-function raise (statusCode, description, headers) {
-    throw interrupt('http', createProperties({
-        statusCode: statusCode,
-        description: description,
-        headers: headers
-    }))
-}
-
 Reactor.resend = function (statusCode, headers, body) {
     return function (response) {
         var h = {
@@ -196,3 +194,5 @@ Reactor.resend = function (statusCode, headers, body) {
         response.end(body)
     }
 }
+
+module.exports = Reactor
