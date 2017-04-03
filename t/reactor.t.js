@@ -1,4 +1,4 @@
-require('proof/redux')(17, require('cadence')(prove))
+require('proof/redux')(18, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -25,6 +25,7 @@ function prove (async, assert) {
             constructor.dispatch('GET /response', 'response')
             constructor.dispatch('GET /callbacky', 'callbacky')
             constructor.dispatch('GET /resources/:id', 'resource')
+            constructor.dispatch('POST /post', 'post')
         })
     }
 
@@ -60,6 +61,10 @@ function prove (async, assert) {
         return { id: id }
     })
 
+    Service.prototype.post = cadence(function (async, request) {
+        return {}
+    })
+
     Service.prototype.callbacky = cadence(function (async) {
         return cadence(function (async, response) {
             response.writeHeader(200, {
@@ -81,7 +86,7 @@ function prove (async, assert) {
 
     var service = new Service
 
-    var server = http.createServer(service.reactor.createMiddleware())
+    var server = http.createServer(service.reactor.middleware)
     var ua = new UserAgent, session = { url: 'http://127.0.0.1:8077' }
 
     async(function () {
@@ -112,6 +117,9 @@ function prove (async, assert) {
         ua.fetch(session, { url: '/response' }, async())
     }, function (body, response) {
         assert(body.toString(), 'responded', 'json')
+        ua.fetch(session, { url: '/post', post: new Buffer('{') }, async())
+    }, function (body, response) {
+        assert(response.statusCode, 400, 'cannot parse')
         ua.fetch(session, { url: '/callbacky' }, async())
     }, function (body, response) {
         assert(body.toString(), 'x\n', 'callbacky')

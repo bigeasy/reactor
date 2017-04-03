@@ -19,16 +19,29 @@ Constructor.prototype.dispatch = function () {
 }
 
 function handle (turnstile, operation) {
+    var before = require('connect')()
+        .use(require('express-auth-parser'))
+    // TODO Configurable.
+        .use(require('body-parser').urlencoded({ extended: false, limit: '64mb' }))
+        .use(require('body-parser').json({ limit: '64mb' }))
     return function (request, response, next) {
-        turnstile.push({
-            operation: operation,
-            request: request,
-            response: response,
-            vargs: Array.prototype.slice.call(arguments, 3),
-            next: next
+        var vargs = Array.prototype.slice.call(arguments, 3)
+        before(request, response, function (error) {
+            if (error) {
+                next(error)
+            } else {
+                turnstile.push({
+                    operation: operation,
+                    request: request,
+                    response: response,
+                    vargs: vargs,
+                    next: next
+                })
+            }
         })
     }
 }
+
 
 function Reactor (object, configurator) {
     var constructor = new Constructor(object, this._dispatch = {})
@@ -43,19 +56,7 @@ function Reactor (object, configurator) {
     for (var pattern in this._dispatch) {
         this._dispatch[pattern] = handle(this.turnstile, this._dispatch[pattern])
     }
-}
-
-Reactor.prototype.createDispatcher = function () {
-    return dispatch(this._dispatch)
-}
-
-Reactor.prototype.createMiddleware = function () {
-    return require('connect')()
-        .use(require('express-auth-parser'))
-// TODO Configurable.
-        .use(require('body-parser').urlencoded({ extended: false, limit: '64mb' }))
-        .use(require('body-parser').json({ limit: '64mb' }))
-        .use(this.createDispatcher())
+    this.middleware = require('connect')().use(dispatch(this._dispatch))
 }
 
 Reactor.prototype._timeout = cadence(function (async, request) {
