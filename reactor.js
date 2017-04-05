@@ -2,7 +2,8 @@ var cadence = require('cadence')
 var dispatch = require('dispatch')
 var interrupt = require('interrupt').createInterrupter('reactor')
 var Operation = require('operation/variadic')
-var Turnstile = require('turnstile/redux')
+var Turnstile = require('turnstile')
+Turnstile.Queue = require('turnstile/queue')
 var rescue = require('rescue')
 var delta = require('delta')
 var coalesce = require('extant')
@@ -18,7 +19,7 @@ Constructor.prototype.dispatch = function () {
     this._dispatch[vargs.shift()] = Operation(vargs, { object: this._object })
 }
 
-function handle (turnstile, operation) {
+function handle (queue, operation) {
     var before = require('connect')()
         .use(require('express-auth-parser'))
     // TODO Configurable.
@@ -30,7 +31,7 @@ function handle (turnstile, operation) {
             if (error) {
                 next(error)
             } else {
-                turnstile.push({
+                queue.push({
                     operation: operation,
                     request: request,
                     response: response,
@@ -46,15 +47,16 @@ function handle (turnstile, operation) {
 function Reactor (object, configurator) {
     var constructor = new Constructor(object, this._dispatch = {})
     configurator(constructor)
-    this.turnstile = new Turnstile(this, '_respond', {
+    this.turnstile = new Turnstile({
         Date: coalesce(constructor.Date, Date),
         turnstiles: coalesce(constructor.turnstiles, 24),
         timeout: coalesce(constructor.timeout)
     })
+    this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
     this._logger = coalesce(constructor.logger, nop)
     this._object = object
     for (var pattern in this._dispatch) {
-        this._dispatch[pattern] = handle(this.turnstile, this._dispatch[pattern])
+        this._dispatch[pattern] = handle(this._queue, this._dispatch[pattern])
     }
     this.middleware = require('connect')().use(dispatch(this._dispatch))
 }
