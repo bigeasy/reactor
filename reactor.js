@@ -1,6 +1,6 @@
 var cadence = require('cadence')
 var dispatch = require('dispatch')
-var interrupt = require('interrupt').createInterrupter('bigeasy.inlet')
+var interrupt = require('interrupt').createInterrupter('reactor')
 var Operation = require('operation/variadic')
 var Turnstile = require('turnstile/redux')
 var rescue = require('rescue')
@@ -105,7 +105,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             }, function (error) {
                 for (;;) {
                     try {
-                        return rescue(/^bigeasy.inlet#http$/m, function (error) {
+                        return rescue(/^reactor#http$/m, function (error) {
                             var statusCode = entry.statusCode = error.statusCode
                             var description = entry.description = error.description
                             var headers = error.headers
