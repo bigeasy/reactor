@@ -166,6 +166,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                 })
                 return
             case 'string':
+                headers['content-type'] = 'text/plain'
                 body = new Buffer(result)
                 break
             default:
@@ -195,6 +196,27 @@ Reactor.resend = function (statusCode, headers, body) {
         }
         response.writeHead(statusCode, h)
         response.end(body)
+    }
+}
+
+Reactor.string = function (contentType, text) {
+    return function (response) {
+        var buffer = new Buffer(text)
+        response.writeHead(statusCode, {
+            'content-type': contentType,
+            'content-length': buffer.length
+        })
+        response.end(buffer)
+    }
+}
+
+Reactor.stream = function (statusCode, headers, stream) {
+    return function (response) {
+        response.writeHead(statusCode, {
+            'content-type': headers['content-type'],
+            'transfer-encoding': 'chunked'
+        })
+        stream.pipe(response)
     }
 }
 
