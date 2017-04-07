@@ -210,12 +210,16 @@ Reactor.string = function (contentType, text) {
     }
 }
 
-Reactor.stream = function (statusCode, headers, stream) {
+Reactor.stream = function (properties, stream) {
     return function (response) {
-        response.writeHead(statusCode, {
-            'content-type': headers['content-type'],
-            'transfer-encoding': 'chunked'
-        })
+        response.statusCode = properties.statusCode
+        response.statusMessage = coalesce(properties.statusMessage)
+        response.setHeader('transfer-encoding', 'chunked')
+        for (var name in properties.headers) {
+            if (name != 'content-length' && name != 'transfer-encoding') {
+                response.setHeader(name, properties.headers[name])
+            }
+        }
         stream.pipe(response)
     }
 }
