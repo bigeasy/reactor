@@ -27,7 +27,7 @@
                             "delta":                        "1.2.x",
                             "dispatch":                     "1.0.1",
                             "express-auth-parser":          "0.1.2",
-                            "extant":                       "1.0.0",
+                            "extant":                       "1.0.x",
                             "interrupt":                    "5.0.x",
                             "magazine":                     "3.0.x",
                             "nop":                          "1.0.x",
