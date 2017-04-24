@@ -43,7 +43,6 @@ function handle (queue, operation) {
     }
 }
 
-
 function Reactor (object, configurator) {
     var constructor = new Constructor(object, this._dispatch = {})
     configurator(constructor)
@@ -189,13 +188,21 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 })
 
 Reactor.resend = function (statusCode, headers, body) {
+    return Reactor.send({ statusCode: statusCode, headers: headers }, body)
+}
+
+Reactor.send = function (properties, buffer) {
     return function (response) {
-        var h = {
-            'content-type': headers['content-type'],
-            'content-length': body.length
+        response.statusCode = properties.statusCode
+        response.statusMessage = coalesce(properties.statusMessage)
+        response.setHeader('content-length', String(buffer.length))
+        for (var name in properties.headers) {
+            if (name != 'content-length' && name != 'transfer-encoding') {
+                response.setHeader(name, properties.headers[name])
+            }
         }
-        response.writeHead(statusCode, h)
-        response.end(body)
+        response.write(buffer)
+        response.end()
     }
 }
 
