@@ -214,6 +214,9 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
         entry.stack = error.stack
         next(error)
     }], function () {
+        if (entry.statusCode == null) {
+            entry.statusCode = work.response.statusCode
+        }
         entry.health.done = JSON.parse(JSON.stringify(this.turnstile.health))
         entry.when.done = Date.now()
         this._logger('info', 'request', entry)
