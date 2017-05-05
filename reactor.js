@@ -27,6 +27,23 @@ function middlewareConstructor (queue, operation) {
                 if (error) {
                     next(error)
                 } else {
+                    request.entry = {
+                        when: {
+                            push: Date.now(),
+                            work: null,
+                            done: null
+                        },
+                        health: {
+                            push: JSON.parse(JSON.stringify(queue.turnstile.health)),
+                            work: null,
+                            done: null
+                        },
+                        request: {
+                            method: request.method,
+                            header: request.headers,
+                            url: request.url
+                        }
+                    }
                     queue.push({
                         operation: operation,
                         request: request,
@@ -97,17 +114,13 @@ function raise (statusCode, description, headers) {
 Reactor.prototype._respond = cadence(function (async, envelope) {
     var work = envelope.body
     var next = work.next
-    var entry = {
-        turnstile: this.turnstile.health,
-        statusCode: 200,
-        request: {
-            method: work.request.method,
-            header: work.request.headers,
-            url: work.request.url
-        }
-    }
-    work.request.entry = entry
 
+    var entry = work.request.entry
+
+    entry.when.work = Date.now()
+    entry.health.work = JSON.parse(JSON.stringify(this.turnstile.health))
+
+    work.request.entry = entry
     work.request.raise = raise
 
     if (envelope.timedout) {
@@ -122,6 +135,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                 for (;;) {
                     try {
                         return rescue(/^reactor#http$/m, function (error) {
+                            delta(async()).ee(work.response).on('finish')
                             var statusCode = entry.statusCode = error.statusCode
                             var description = entry.description = error.description
                             var headers = error.headers
@@ -189,14 +203,18 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                 break
             }
             headers['content-length'] = body.length
+            delta(async()).ee(work.response).on('finish')
             work.response.writeHead(200, 'OK', headers)
-            work.response.end(body)
+            work.response.write(body)
+            work.response.end()
         })
     }, function (error) {
         entry.statusCode = 599
         entry.stack = error.stack
         next(error)
     }], function () {
+        entry.health.done = JSON.parse(JSON.stringify(this.turnstile.health))
+        entry.when.done = Date.now()
         this._logger('info', 'request', entry)
         return [ block.break ]
     })()
