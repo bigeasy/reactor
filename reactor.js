@@ -142,6 +142,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             var body = new Buffer(JSON.stringify({ description: description }) + '\n')
                             headers['content-length'] = body.length
                             headers['content-type'] = 'application/json'
+                            entry.statusCode = statusCode
                             work.response.writeHead(statusCode, description, headers)
                             work.response.end(body)
                             return [ block.break ]
@@ -204,6 +205,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             }
             headers['content-length'] = body.length
             delta(async()).ee(work.response).on('finish')
+            entry.statusCode = 200
             work.response.writeHead(200, 'OK', headers)
             work.response.write(body)
             work.response.end()
