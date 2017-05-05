@@ -19,28 +19,37 @@ Constructor.prototype.dispatch = function () {
     this._dispatch[vargs.shift()] = Operation(vargs, { object: this._object })
 }
 
-function handle (queue, operation) {
+function middlewareConstructor (queue, operation) {
+    return function (before) {
+        return function (request, response, next) {
+            var vargs = Array.prototype.slice.call(arguments, 3)
+            before(request, response, function (error) {
+                if (error) {
+                    next(error)
+                } else {
+                    queue.push({
+                        operation: operation,
+                        request: request,
+                        response: response,
+                        vargs: vargs,
+                        next: next
+                    })
+                }
+            })
+        }
+    }
+}
+
+function injectParsers (handler) {
     var before = require('connect')()
         .use(require('express-auth-parser'))
     // TODO Configurable.
         .use(require('body-parser').urlencoded({ extended: false, limit: '64mb' }))
         .use(require('body-parser').json({ limit: '64mb' }))
-    return function (request, response, next) {
-        var vargs = Array.prototype.slice.call(arguments, 3)
-        before(request, response, function (error) {
-            if (error) {
-                next(error)
-            } else {
-                queue.push({
-                    operation: operation,
-                    request: request,
-                    response: response,
-                    vargs: vargs,
-                    next: next
-                })
-            }
-        })
-    }
+    return handler(before)
+}
+
+function handle (queue, operation) {
 }
 
 function Reactor (object, configurator) {
@@ -54,10 +63,15 @@ function Reactor (object, configurator) {
     this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
     this._logger = coalesce(constructor.logger, nop)
     this._object = object
+    var middleware = {}
+    var dispatcher = {}
     for (var pattern in this._dispatch) {
-        this._dispatch[pattern] = handle(this._queue, this._dispatch[pattern])
+        var create = middlewareConstructor(this._queue, this._dispatch[pattern])
+        dispatcher[pattern] = create(function (request, response, next) { next() })
+        middleware[pattern] = injectParsers(create)
     }
-    this.middleware = require('connect')().use(dispatch(this._dispatch))
+    this.middleware = require('connect')().use(dispatch(middleware))
+    this.dispatcher = require('connect')().use(dispatch(dispatcher))
 }
 
 Reactor.prototype._timeout = cadence(function (async, request) {
@@ -92,6 +106,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             url: work.request.url
         }
     }
+    work.request.entry = entry
 
     work.request.raise = raise
 
@@ -178,7 +193,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             work.response.end(body)
         })
     }, function (error) {
-        entry.statusCode = 0
+        entry.statusCode = 599
         entry.stack = error.stack
         next(error)
     }], function () {
