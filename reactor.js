@@ -135,7 +135,6 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                 for (;;) {
                     try {
                         return rescue(/^reactor#http$/m, function (error) {
-                            delta(async()).ee(work.response).on('finish')
                             var statusCode = entry.statusCode = error.statusCode
                             var description = entry.description = error.description
                             var headers = error.headers
