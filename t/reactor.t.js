@@ -1,4 +1,4 @@
-require('proof')(18, require('cadence')(prove))
+require('proof')(20, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -66,19 +66,15 @@ function prove (async, assert) {
     })
 
     Service.prototype.callbacky = cadence(function (async) {
-        return cadence(function (async, response) {
-            response.writeHeader(200, {
-                'content-type': 'text/plain',
-                'content-length': 2
-            })
+        return [ cadence(function (async, response) {
             response.end('x\n')
-        })
+        }), 200, { 'content-type': 'text/plain' } ]
     })
 
     Service.prototype.hang = cadence(function (async, request) {
         async(function () {
             this.wait = async()
-            ; (this.notify)()
+            this.notify.call()
         }, function () {
             return { hang: true }
         })
@@ -98,19 +94,20 @@ function prove (async, assert) {
         ua.fetch(session, { url: '/error' }, async())
     }, function (body, response) {
         assert(response.statusCode, 401, 'error status code')
-        assert(body, { description: 'Unknown' }, 'error message')
+        assert(body, 'Unauthorized', 'error message')
         ua.fetch(session, { url: '/throw/number' }, async())
     }, function (body, response) {
         assert(response.statusCode, 401, 'thrown numbber status code')
-        assert(body, { description: 'Unknown' }, 'thrown number message')
+        assert(body, 'Unauthorized', 'thrown number message')
         ua.fetch(session, { url: '/throw/redirect' }, async())
     }, function (body, response) {
         assert(response.statusCode, 307, 'thrown redirect status code')
         assert(response.headers.location, '/redirect', 'thrown redirect location')
-        assert(body, { description: 'Unknown' }, 'thrown redirect message')
+        assert(body, 'Temporary Redirect', 'thrown redirect message')
         ua.fetch(session, { url: '/exception' }, async())
     }, function (body, response) {
         assert(response.statusCode, 500, 'exception status code')
+        assert(response.statusMessage, 'Internal Server Error', 'exception status message')
         ua.fetch(session, { url: '/json' }, async())
     }, function (body, response) {
         assert(body, { key: 'value' }, 'json')
@@ -120,6 +117,7 @@ function prove (async, assert) {
         ua.fetch(session, { url: '/post', post: new Buffer('{') }, async())
     }, function (body, response) {
         assert(response.statusCode, 400, 'cannot parse')
+        assert(response.statusMessage, 'Bad Request', 'cannot parse message')
         ua.fetch(session, { url: '/callbacky' }, async())
     }, function (body, response) {
         assert(body.toString(), 'x\n', 'callbacky')
@@ -149,7 +147,7 @@ function prove (async, assert) {
             ua.fetch(session, { url: '/json' }, async())
         }, function (body, response) {
             assert(response.statusCode, 503, 'timeout code')
-            assert(body, { description: 'Service Not Available' }, 'timeout message')
+            assert(body, 'Service Unavailable', 'timeout message')
         })
     }, function (body, response) {
         server.close(async())

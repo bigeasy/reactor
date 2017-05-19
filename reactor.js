@@ -1,3 +1,6 @@
+// Node.js API.
+var http = require('http')
+
 var cadence = require('cadence')
 var dispatch = require('dispatch')
 var interrupt = require('interrupt').createInterrupter('reactor')
@@ -23,40 +26,39 @@ function middlewareConstructor (queue, operation) {
     return function (before) {
         return function (request, response, next) {
             var vargs = Array.prototype.slice.call(arguments, 3)
-            before(request, response, function (error) {
-                if (error) {
-                    next(error)
-                } else {
-                    request.entry = {
-                        when: {
-                            push: Date.now(),
-                            work: null,
-                            done: null
-                        },
-                        health: {
-                            push: JSON.parse(JSON.stringify(queue.turnstile.health)),
-                            work: null,
-                            done: null
-                        },
-                        request: {
-                            method: request.method,
-                            header: request.headers,
-                            url: request.url
-                        }
-                    }
-                    queue.push({
-                        operation: operation,
-                        request: request,
-                        response: response,
-                        vargs: vargs,
-                        next: next
-                    })
+            request.entry = {
+                when: {
+                    push: Date.now(),
+                    start: null,
+                    headers: null,
+                    finih: null
+                },
+                health: {
+                    push: JSON.parse(JSON.stringify(queue.turnstile.health)),
+                    start: null,
+                    finish: null
+                },
+                request: {
+                    method: request.method,
+                    header: request.headers,
+                    url: request.url,
+                    vargs: vargs
                 }
+            }
+            before(request, response, function (error) {
+                queue.push({
+                    error: coalesce(error),
+                    operation: operation,
+                    request: request,
+                    response: response,
+                    vargs: vargs
+                })
             })
         }
     }
 }
 
+// Add using configurator! Configure using configurator!
 function injectParsers (handler) {
     var before = require('connect')()
         .use(require('express-auth-parser'))
@@ -64,9 +66,6 @@ function injectParsers (handler) {
         .use(require('body-parser').urlencoded({ extended: false, limit: '64mb' }))
         .use(require('body-parser').json({ limit: '64mb' }))
     return handler(before)
-}
-
-function handle (queue, operation) {
 }
 
 function Reactor (object, configurator) {
@@ -79,6 +78,7 @@ function Reactor (object, configurator) {
     })
     this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
     this._logger = coalesce(constructor.logger, nop)
+    this._completed = coalesce(constructor.completed, nop)
     this._object = object
     var middleware = {}
     var dispatcher = {}
@@ -91,15 +91,13 @@ function Reactor (object, configurator) {
     this.dispatcher = require('connect')().use(dispatch(dispatcher))
 }
 
-Reactor.prototype._timeout = cadence(function (async, request) {
-    request.raise(503, 'Service Not Available')
-})
+Reactor.prototype._timeout = cadence(function () { throw 503 })
 
 function createProperties (properties) {
     return {
         statusCode: properties.statusCode,
-        headers: properties.headers || {},
-        description: properties.description || 'Unknown'
+        headers: coalesce(properties.headers, {}),
+        description: coalesce(properties.description)
     }
 }
 
@@ -117,8 +115,8 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
     var entry = work.request.entry
 
-    entry.when.work = Date.now()
-    entry.health.work = JSON.parse(JSON.stringify(this.turnstile.health))
+    entry.when.start = Date.now()
+    entry.health.start = JSON.parse(JSON.stringify(this.turnstile.health))
 
     work.request.entry = entry
     work.request.raise = raise
@@ -127,26 +125,49 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
         work.operation = Operation([ this, '_timeout' ])
     }
 
-    var block = async([function () {
+    var finish
+
+    async(function () {
         async(function () {
             async([function () {
-                work.operation.apply(null, [ work.request ].concat(work.vargs, async()))
-            }, function (error) {
+                async(function () {
+                    if (work.error) {
+                        throw work.error
+                    }
+                    work.operation.apply(null, [ work.request ].concat(work.vargs, async()))
+                }, function () {
+                    var vargs = Array.prototype.slice.call(arguments)
+
+                    var result = vargs.shift()
+                    var statusCode = (typeof vargs[0] == 'number') ? vargs.shift() : 200
+                    var description = http.STATUS_CODES[statusCode]
+                    if (typeof vargs[0] == 'string') {
+                        description = vargs.shift()
+                    }
+                    if (vargs[0] == null) {
+                        vargs.shift()
+                    }
+                    var headers = coalesce(vargs.shift(), {})
+
+                    interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
+
+                    return [ result, statusCode, description, headers ]
+                })
+            }, function (caught) {
                 for (;;) {
                     try {
                         return rescue(/^reactor#http$/m, function (error) {
-                            var statusCode = entry.statusCode = error.statusCode
-                            var description = entry.description = error.description
-                            var headers = error.headers
-                            var body = new Buffer(JSON.stringify({ description: description }) + '\n')
-                            headers['content-length'] = body.length
+                            var statusCode = error.statusCode
+                            var description = coalesce(error.description, http.STATUS_CODES[statusCode])
+                            var headers = coalesce(error.headers, {})
+
+                            interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
+
                             headers['content-type'] = 'application/json'
-                            entry.statusCode = statusCode
-                            work.response.writeHead(statusCode, description, headers)
-                            work.response.end(body)
-                            return [ block.break ]
-                        })(error)
-                    } catch (ignore) {
+
+                            return [ description, statusCode, description, headers ]
+                        })(caught)
+                    } catch (error) {
                         if (
                             typeof error == 'number' &&
                             !isNaN(error) &&
@@ -172,56 +193,69 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             }
                             error = interrupt('http', properties)
                         } else {
-                            throw error
+                            entry.error = error
+                            error = { statusCode: 500 }
                         }
+                        caught = error
                     }
                 }
             }])
-        }, function (result, headers) {
-            headers || (headers = {})
-            var body
-            switch (typeof result) {
-            case 'function':
+        }, function (result, statusCode, description, headers) {
+            var body, f
+            if (typeof result == 'function') {
+                f = result
+            } else {
+                if (typeof result == 'string') {
+                    if (!('content-type' in headers)) {
+                        headers['content-type'] = 'text/plain'
+                        result = new Buffer(result)
+                    } else if (headers['content-type'] == 'application/json') {
+                        result = new Buffer(JSON.stringify(result) + '\n')
+                    }
+                } else if (!('content-type' in headers)) {
+                    headers['content-type'] = 'application/json'
+                    result = new Buffer(JSON.stringify(result) + '\n')
+                }
+                f = function (response) {
+                    response.end(result)
+                }
+            }
+
+            work.response.writeHead(statusCode, description, headers)
+
+            entry.statusCode = statusCode
+            entry.description = description
+            entry.headers = headers
+
+            var finish = delta(async()).ee(work.response).on('finish')
+
+            async([function () {
                 async(function () {
-                    delta(async()).ee(work.response).on('finish')
                     if (result.length == 2) {
-                        result.call(work.operation.object, work.response, async())
+                        f.call(work.operation.object, work.response, async())
                     } else {
-                        result.call(work.operation.object, work.response)
+                        return [ f.call(work.operation.object, work.response) ]
                     }
                 }, function () {
                     return []
                 })
-                return
-            case 'string':
-                headers['content-type'] = 'text/plain'
-                body = new Buffer(result)
-                break
-            default:
-                headers['content-type'] = 'application/json'
-                body = new Buffer(JSON.stringify(result) + '\n')
-                break
-            }
-            headers['content-length'] = body.length
-            delta(async()).ee(work.response).on('finish')
-            entry.statusCode = 200
-            work.response.writeHead(200, 'OK', headers)
-            work.response.write(body)
-            work.response.end()
+            }, function (error) {
+                entry.error = error
+                work.response.end()
+                finish.cancel()
+            }])
         })
-    }, function (error) {
-        entry.statusCode = 599
-        entry.stack = error.stack
-        next(error)
-    }], function () {
-        if (entry.statusCode == null) {
-            entry.statusCode = work.response.statusCode
-        }
+    }, function () {
         entry.health.done = JSON.parse(JSON.stringify(this.turnstile.health))
-        entry.when.done = Date.now()
-        this._logger('info', 'request', entry)
-        return [ block.break ]
-    })()
+        entry.when.finish = Date.now()
+        entry.duration = {
+            start: entry.when.start - entry.when.push,
+            headers: entry.when.headers - entry.when.push,
+            finish: entry.when.finish - entry.when.push
+        }
+        this._logger.call(null, 'info', 'request', entry)
+        this._completed.call(null, entry)
+    })
 })
 
 Reactor.resend = function (statusCode, headers, body) {
@@ -229,43 +263,23 @@ Reactor.resend = function (statusCode, headers, body) {
 }
 
 Reactor.send = function (properties, buffer) {
-    return function (response) {
-        response.statusCode = properties.statusCode
-        response.statusMessage = coalesce(properties.statusMessage)
-        response.setHeader('content-length', String(buffer.length))
-        for (var name in properties.headers) {
-            if (name != 'content-length' && name != 'transfer-encoding') {
-                response.setHeader(name, properties.headers[name])
-            }
-        }
-        response.write(buffer)
-        response.end()
-    }
+    var headers = JSON.parse(JSON.stringify(properties.headers))
+    delete headers['content-length']
+    delete headers['transfer-encoding']
+    return [ buffer, properties.statusCode, properties.statusMessage, headers ]
 }
 
-Reactor.string = function (contentType, text) {
-    return function (response) {
-        var buffer = new Buffer(text)
-        response.writeHead(statusCode, {
-            'content-type': contentType,
-            'content-length': buffer.length
-        })
-        response.end(buffer)
-    }
+Reactor.string = function (statusCode, contentType, text) {
+    return [ new Buffer(text), statusCode, { 'content-type': contentType } ]
 }
 
 Reactor.stream = function (properties, stream) {
-    return function (response) {
-        response.statusCode = properties.statusCode
-        response.statusMessage = coalesce(properties.statusMessage)
-        response.setHeader('transfer-encoding', 'chunked')
-        for (var name in properties.headers) {
-            if (name != 'content-length' && name != 'transfer-encoding') {
-                response.setHeader(name, properties.headers[name])
-            }
-        }
+    var headers = JSON.parse(JSON.stringify(properties.headers))
+    delete headers['content-length']
+    headers['transfer-encoding'] = 'chunked'
+    return [ function (response) {
         stream.pipe(response)
-    }
+    }, properties.statusCode, properties.statusMessage, headers ]
 }
 
 module.exports = Reactor
