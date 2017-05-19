@@ -1,20 +1,56 @@
 // Node.js API.
 var http = require('http')
 
+// Control-flow utilities.
 var cadence = require('cadence')
+var delta = require('delta')
+
+// Route Sencha Connect middleware based on request method and URL patterns.
 var dispatch = require('dispatch')
+
+// Exceptions that you can catch by type.
 var interrupt = require('interrupt').createInterrupter('reactor')
+
+// Contextualized callbacks and event handlers.
 var Operation = require('operation/variadic')
+
+// Evented work queue.
 var Turnstile = require('turnstile')
 Turnstile.Queue = require('turnstile/queue')
+
+// Catch exceptions based on a regex match of an error message or property.
 var rescue = require('rescue')
-var delta = require('delta')
+
+// Return the first not null-like value.
 var coalesce = require('extant')
+
+// Do nothing.
 var nop = require('nop')
 
 function Constructor (object, dispatch) {
     this._object = object
     this._dispatch = dispatch
+    this._use = []
+    this._defaultUse = true
+}
+
+Constructor.prototype.useDefault = function () {
+    this.use(require('express-auth-parser'))
+    this.use(require('body-parser').urlencoded({ extended: false, limit: '64mb' }))
+    this.use(require('body-parser').json({ limit: '64mb' }))
+}
+
+Constructor.prototype.use = function () {
+    var vargs = Array.prototype.slice.call(arguments)
+    this._defaultUse = false
+    while (vargs.length) {
+        var varg = vargs.shift()
+        if (Array.isArray(varg)) {
+            vargs.unshift(varg)
+        } else {
+            this._use.push(varg)
+        }
+    }
 }
 
 Constructor.prototype.dispatch = function () {
@@ -22,50 +58,38 @@ Constructor.prototype.dispatch = function () {
     this._dispatch[vargs.shift()] = Operation(vargs, { object: this._object })
 }
 
-function middlewareConstructor (queue, operation) {
-    return function (before) {
-        return function (request, response, next) {
-            var vargs = Array.prototype.slice.call(arguments, 3)
-            request.entry = {
-                when: {
-                    push: Date.now(),
-                    start: null,
-                    headers: null,
-                    finih: null
-                },
-                health: {
-                    push: JSON.parse(JSON.stringify(queue.turnstile.health)),
-                    start: null,
-                    finish: null
-                },
-                request: {
-                    method: request.method,
-                    header: request.headers,
-                    url: request.url,
-                    vargs: vargs
-                }
+function handler (queue, before, operation) {
+    return function (request, response, next) {
+        var vargs = Array.prototype.slice.call(arguments, 3)
+        request.entry = {
+            when: {
+                push: Date.now(),
+                start: null,
+                headers: null,
+                finish: null
+            },
+            health: {
+                push: JSON.parse(JSON.stringify(queue.turnstile.health)),
+                start: null,
+                finish: null
+            },
+            request: {
+                method: request.method,
+                header: request.headers,
+                url: request.url,
+                vargs: vargs
             }
-            before(request, response, function (error) {
-                queue.push({
-                    error: coalesce(error),
-                    operation: operation,
-                    request: request,
-                    response: response,
-                    vargs: vargs
-                })
-            })
         }
+        before(request, response, function (error) {
+            queue.push({
+                error: coalesce(error),
+                operation: operation,
+                request: request,
+                response: response,
+                vargs: vargs
+            })
+        })
     }
-}
-
-// Add using configurator! Configure using configurator!
-function injectParsers (handler) {
-    var before = require('connect')()
-        .use(require('express-auth-parser'))
-    // TODO Configurable.
-        .use(require('body-parser').urlencoded({ extended: false, limit: '64mb' }))
-        .use(require('body-parser').json({ limit: '64mb' }))
-    return handler(before)
 }
 
 function Reactor (object, configurator) {
@@ -80,15 +104,18 @@ function Reactor (object, configurator) {
     this._logger = coalesce(constructor.logger, nop)
     this._completed = coalesce(constructor.completed, nop)
     this._object = object
-    var middleware = {}
+    if (constructor._defaultUse) {
+        constructor.useDefault()
+    }
+    var before = require('connect')()
+    constructor._use.forEach(function (middleware) {
+        before.use(middleware)
+    })
     var dispatcher = {}
     for (var pattern in this._dispatch) {
-        var create = middlewareConstructor(this._queue, this._dispatch[pattern])
-        dispatcher[pattern] = create(function (request, response, next) { next() })
-        middleware[pattern] = injectParsers(create)
+        dispatcher[pattern] = handler(this._queue, before, this._dispatch[pattern])
     }
-    this.middleware = require('connect')().use(dispatch(middleware))
-    this.dispatcher = require('connect')().use(dispatch(dispatcher))
+    this.middleware = require('connect')().use(dispatch(dispatcher))
 }
 
 Reactor.prototype._timeout = cadence(function () { throw 503 })
