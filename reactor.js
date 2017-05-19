@@ -73,6 +73,11 @@ function handler (queue, before, operation) {
                 start: null,
                 finish: null
             },
+            duration: {
+                start: null,
+                headers: null,
+                finish: null,
+            },
             request: {
                 method: request.method,
                 header: request.headers,
