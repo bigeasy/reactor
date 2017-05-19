@@ -6,6 +6,7 @@ function prove (async, assert) {
     var UserAgent = require('vizsla')
     var http = require('http')
     var connect = require('connect')
+    var coalesce = require('extant')
 
     var now = 0
     function Service () {
@@ -107,7 +108,8 @@ function prove (async, assert) {
         ua.fetch(session, { url: '/exception' }, async())
     }, function (body, response) {
         assert(response.statusCode, 500, 'exception status code')
-        assert(response.statusMessage, 'Internal Server Error', 'exception status message')
+        // Node.js 0.10 does not parse the status messsage.
+        assert(coalesce(response.statusMessage, 'Internal Server Error'), 'Internal Server Error', 'exception status message')
         ua.fetch(session, { url: '/json' }, async())
     }, function (body, response) {
         assert(body, { key: 'value' }, 'json')
@@ -117,7 +119,7 @@ function prove (async, assert) {
         ua.fetch(session, { url: '/post', post: new Buffer('{') }, async())
     }, function (body, response) {
         assert(response.statusCode, 400, 'cannot parse')
-        assert(response.statusMessage, 'Bad Request', 'cannot parse message')
+        assert(coalesce(response.statusMessage, 'Bad Request'), 'Bad Request', 'cannot parse message')
         ua.fetch(session, { url: '/callbacky' }, async())
     }, function (body, response) {
         assert(body.toString(), 'x\n', 'callbacky')

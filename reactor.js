@@ -27,8 +27,6 @@ var coalesce = require('extant')
 // Do nothing.
 var nop = require('nop')
 
-var MISSING = { 400: 'Bad Request', 500: 'Internal Server Error' }
-
 function Constructor (object, dispatch) {
     this._object = object
     this._dispatch = dispatch
@@ -174,7 +172,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
                     var result = vargs.shift()
                     var statusCode = (typeof vargs[0] == 'number') ? vargs.shift() : 200
-                    var description = coalesce(http.STATUS_CODES[statusCode], MISSING[statusCode])
+                    var description = coalesce(http.STATUS_CODES[statusCode])
                     if (typeof vargs[0] == 'string') {
                         description = vargs.shift()
                     }
@@ -192,7 +190,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                     try {
                         return rescue(/^reactor#http$/m, function (error) {
                             var statusCode = error.statusCode
-                            var description = coalesce(error.description, http.STATUS_CODES[statusCode], MISSING[statusCode])
+                            var description = coalesce(error.description, http.STATUS_CODES[statusCode])
                             var headers = coalesce(error.headers, {})
 
                             interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
