@@ -15,7 +15,7 @@ Authenticator.prototype.token = cadence(function (async, request) {
         request.authorization.scheme == 'Basic' &&
         request.authorization.credentials == this._auth
     if (!authorized) {
-        request.raise(401, 'Forbidden')
+        throw 401
     }
     async(function () {
         crypto.randomBytes(16, async())
@@ -30,7 +30,7 @@ Authenticator.prototype.token = cadence(function (async, request) {
 
 Authenticator.prototype.authenticate = function (request) {
     if (!Authenticator.isBearer(request)) {
-        request.raise(401, 'Forbidden')
+        throw 401
     }
     this._magazine.expire(1000 * 60 * 60 * 24) // yesterday
     var token = request.authorization.credentials
@@ -39,7 +39,7 @@ Authenticator.prototype.authenticate = function (request) {
         cartridge.release()
     } else {
         cartridge.remove()
-        request.raise(401, 'Forbidden')
+        throw 401
     }
 }
 
