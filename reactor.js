@@ -255,6 +255,8 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
             work.response.writeHead(statusCode, description, headers)
 
+            entry.when.headers = Date.now()
+
             entry.statusCode = statusCode
             entry.description = description
             entry.headers = headers
