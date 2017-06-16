@@ -58,6 +58,11 @@ Constructor.prototype.dispatch = function () {
     this._dispatch[vargs.shift()] = Operation(vargs, { object: this._object })
 }
 
+Constructor.prototype.error = function () {
+    var vargs = Array.prototype.slice.call(arguments)
+    this._error = Operation(vargs, { object: this._object })
+}
+
 function handler (queue, before, operation) {
     return function (request, response, next) {
         var vargs = Array.prototype.slice.call(arguments, 3)
@@ -105,6 +110,9 @@ function Reactor (object, configurator) {
         turnstiles: coalesce(constructor.turnstiles, 24),
         timeout: coalesce(constructor.timeout)
     })
+    this._error = coalesce(constructor._error, Operation([ this, function (statusCode, description, headers, cause, callback) {
+        callback(null, description, statusCode, description, headers)
+    } ]))
     this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
     this._logger = coalesce(constructor.logger, nop)
     this._completed = coalesce(constructor.completed, nop)
@@ -141,6 +149,23 @@ function raise (statusCode, description, headers) {
     }))
 }
 
+function expandResult (vargs) {
+    var result = vargs.shift()
+    var statusCode = (typeof vargs[0] == 'number') ? vargs.shift() : 200
+    var description = coalesce(http.STATUS_CODES[statusCode])
+    if (typeof vargs[0] == 'string') {
+        description = vargs.shift()
+    }
+    if (vargs[0] == null) {
+        vargs.shift()
+    }
+    var headers = coalesce(vargs.shift(), {})
+
+    interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
+
+    return [ result, statusCode, description, headers ]
+}
+
 Reactor.prototype._respond = cadence(function (async, envelope) {
     var work = envelope.body
     var next = work.next
@@ -168,37 +193,26 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                     }
                     work.operation.apply(null, [ work.request ].concat(work.vargs, async()))
                 }, function () {
-                    var vargs = Array.prototype.slice.call(arguments)
-
-                    var result = vargs.shift()
-                    var statusCode = (typeof vargs[0] == 'number') ? vargs.shift() : 200
-                    var description = coalesce(http.STATUS_CODES[statusCode])
-                    if (typeof vargs[0] == 'string') {
-                        description = vargs.shift()
-                    }
-                    if (vargs[0] == null) {
-                        vargs.shift()
-                    }
-                    var headers = coalesce(vargs.shift(), {})
-
-                    interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
-
-                    return [ result, statusCode, description, headers ]
+                    return expandResult(Array.prototype.slice.call(arguments))
                 })
             }, function (caught) {
                 for (;;) {
                     try {
-                        return rescue(/^reactor#http$/m, function (error) {
+                        rescue(/^reactor#http$/m, function (error) {
                             var statusCode = error.statusCode
                             var description = coalesce(error.description, http.STATUS_CODES[statusCode])
                             var headers = coalesce(error.headers, {})
 
                             interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
 
-                            headers['content-type'] = 'application/json'
-
-                            return [ description, statusCode, description, headers ]
+                            async(function () {
+                                this._error.call(null, statusCode, description, headers, coalesce(error.cause), async())
+                            }, function () {
+                                return expandResult(Array.prototype.slice.call(arguments))
+                            })
                         })(caught)
+
+                        break
                     } catch (error) {
                         if (
                             typeof error == 'number' &&
@@ -223,7 +237,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             if (error.location) {
                                 properties.headers.location = error.location
                             }
-                            error = interrupt('http', properties)
+                            error = interrupt('http', properties, coalesce(entry.error))
                         } else {
                             entry.error = error
                             error = { statusCode: 500 }
