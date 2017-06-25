@@ -33,7 +33,7 @@
                             "nop":                          "1.0.x",
                             "operation":                    "1.4.x",
                             "rescue":                       "3.0.x",
-                            "turnstile":                    "3.0.x"
+                            "turnstile":                    "3.2.x"
     },
     "devDependencies":
     {
