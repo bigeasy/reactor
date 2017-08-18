@@ -243,15 +243,11 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                         result = new Buffer(result)
                     } else if (headers['content-type'] == 'application/json') {
                         result = new Buffer(JSON.stringify(result) + '\n')
-                    } else {
-                        result = new Buffer(result)
                     }
                 } else if (!('content-type' in headers)) {
                     headers['content-type'] = 'application/json'
                     result = new Buffer(JSON.stringify(result) + '\n')
                 }
-                interrupt.assert(Buffer.isBuffer(result), 'buffer expected')
-                headers['content-length'] = result.length
                 f = function (response) {
                     response.end(result)
                 }
