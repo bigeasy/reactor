@@ -116,7 +116,11 @@ function prove (async, assert) {
         ua.fetch(session, { url: '/response' }, async())
     }, function (body, response) {
         assert(body.toString(), 'responded', 'json')
-        ua.fetch(session, { url: '/post', post: new Buffer('{') }, async())
+        ua.fetch(session, {
+            url: '/post',
+            headers: { 'content-type': 'application/json' },
+            post: new Buffer('{')
+        }, async())
     }, function (body, response) {
         assert(response.statusCode, 400, 'cannot parse')
         assert(coalesce(response.statusMessage, 'Bad Request'), 'Bad Request', 'cannot parse message')
