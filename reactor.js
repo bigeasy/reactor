@@ -265,7 +265,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
             async([function () {
                 async(function () {
-                    if (result.length == 2) {
+                    if (f.length == 2) {
                         f.call(work.operation.object, work.response, async())
                     } else {
                         return [ f.call(work.operation.object, work.response) ]
