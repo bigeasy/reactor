@@ -164,7 +164,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             async([function () {
                 async(function () {
                     if (work.error) {
-                        throw work.error
+                        throw { cause: work.error, statusCode: coalesce(work.error.statusCode) }
                     }
                     work.operation.apply(null, [ work.request ].concat(work.vargs, async()))
                 }, function () {
@@ -193,6 +193,8 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             var description = coalesce(error.description, http.STATUS_CODES[statusCode])
                             var headers = coalesce(error.headers, {})
 
+                            entry.error = coalesce(error.cause)
+
                             interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
 
                             headers['content-type'] = 'application/json'
@@ -212,6 +214,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             error = { statusCode: 307, location: error }
                         }
                         if (
+                            ! (error instanceof Error) &&
                             typeof error == 'object' &&
                             typeof error.statusCode == 'number' &&
                             !isNaN(error.statusCode) &&
@@ -223,7 +226,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             if (error.location) {
                                 properties.headers.location = error.location
                             }
-                            error = interrupt('http', properties)
+                            error = interrupt('http', properties, { cause: coalesce(error.cause) })
                         } else {
                             entry.error = error
                             error = { statusCode: 500 }
