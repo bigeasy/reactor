@@ -228,8 +228,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             }
                             error = interrupt('http', properties, { cause: coalesce(error.cause) })
                         } else {
-                            entry.error = error
-                            error = { statusCode: 500 }
+                            error = { statusCode: 500, cause: error }
                         }
                         caught = error
                     }
