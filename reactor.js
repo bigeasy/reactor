@@ -290,7 +290,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             headers: entry.when.headers - entry.when.push,
             finish: entry.when.finish - entry.when.push
         }
-        this._logger.call(null, 'info', 'request', entry)
+        this._logger.call(null, entry)
         this._completed.call(null, entry)
     })
 })
