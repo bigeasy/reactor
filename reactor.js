@@ -106,7 +106,11 @@ function Reactor (object, configurator) {
         timeout: coalesce(constructor.timeout)
     })
     this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
-    this._logger = coalesce(constructor.logger, nop)
+    this._logger = coalesce(constructor.logger, function (entry) {
+        if (entry.error) {
+            console.log(entry.error.stack)
+        }
+    })
     this._completed = coalesce(constructor.completed, nop)
     this._object = object
     if (constructor._defaultUse) {
