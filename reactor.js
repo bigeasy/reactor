@@ -195,6 +195,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                         return rescue(/^reactor#http$/m, function (error) {
                             var statusCode = error.statusCode
                             var description = coalesce(error.description, http.STATUS_CODES[statusCode])
+                            var body = coalesce(error.body, description)
                             var headers = coalesce(error.headers, {})
 
                             entry.error = coalesce(error.cause)
@@ -216,6 +217,25 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             error = { statusCode: error }
                         } else if (typeof error == 'string') {
                             error = { statusCode: 307, location: error }
+                        }
+                        if (Array.isArray(error)) {
+                            error = error.slice()
+                            var needBody = true
+                            if (typeof error[1] == 'number') {
+                                var body = error.shift()
+                                needBody = false
+                            }
+                            var statusCode = typeof error[0] == 'number' ? error.shift() : 503
+                            var description = coalesce(http.STATUS_CODES[statusCode])
+                            if (typeof vargs[0] == 'string') {
+                                description = error.shift()
+                            }
+                            error = {
+                                statusCode: statusCode,
+                                description: description,
+                                body: needBody ? description : body,
+                                headers: coalesce(error.shift(), {})
+                            }
                         }
                         if (
                             ! (error instanceof Error) &&
