@@ -176,7 +176,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
                     var result = vargs.shift()
                     var statusCode = (typeof vargs[0] == 'number') ? vargs.shift() : 200
-                    var description = coalesce(http.STATUS_CODES[statusCode])
+                    var description = coalesce(http.STATUS_CODES[statusCode], 'unknown')
                     if (typeof vargs[0] == 'string') {
                         description = vargs.shift()
                     }
@@ -184,8 +184,6 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                         vargs.shift()
                     }
                     var headers = coalesce(vargs.shift(), {})
-
-                    interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
 
                     return [ result, statusCode, description, headers ]
                 })
