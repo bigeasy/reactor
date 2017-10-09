@@ -218,15 +218,14 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                         }
                         if (Array.isArray(error)) {
                             error = error.slice()
-                            var needBody = true
-                            if (typeof error[1] == 'number') {
-                                var body = error.shift()
-                                needBody = false
-                            }
                             var statusCode = typeof error[0] == 'number' ? error.shift() : 503
+                            var body = error.shift() || null
                             var description = coalesce(http.STATUS_CODES[statusCode])
                             if (typeof vargs[0] == 'string') {
                                 description = error.shift()
+                            }
+                            if (body == null) {
+                                body = description
                             }
                             error = {
                                 statusCode: statusCode,
