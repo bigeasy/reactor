@@ -25,7 +25,7 @@ var rescue = require('rescue')
 var coalesce = require('extant')
 
 // Do nothing.
-var nop = require('nop')
+var noop = require('nop')
 
 function Constructor (object, dispatch) {
     this._object = object
@@ -111,7 +111,7 @@ function Reactor (object, configurator) {
             console.log(entry.error.stack)
         }
     })
-    this._completed = coalesce(constructor.completed, nop)
+    this._completed = coalesce(constructor.completed, noop)
     this._object = object
     if (constructor._defaultUse) {
         constructor.useDefault()
