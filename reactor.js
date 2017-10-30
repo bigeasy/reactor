@@ -27,11 +27,18 @@ var coalesce = require('extant')
 // Do nothing.
 var noop = require('nop')
 
+var arrayed = require('./arrayed')
+
 function Constructor (object, dispatch) {
     this._object = object
     this._dispatch = dispatch
     this._use = []
     this._defaultUse = true
+    this.logger = function (entry) {
+        if (entry.error) {
+            console.log(entry.error.stack)
+        }
+    }
 }
 
 Constructor.prototype.useDefault = function () {
@@ -46,7 +53,7 @@ Constructor.prototype.use = function () {
     while (vargs.length) {
         var varg = vargs.shift()
         if (Array.isArray(varg)) {
-            vargs.unshift(varg)
+            this._use.push.apply(this._use, varg)
         } else {
             this._use.push(varg)
         }
@@ -106,11 +113,7 @@ function Reactor (object, configurator) {
         timeout: coalesce(constructor.timeout)
     })
     this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
-    this._logger = coalesce(constructor.logger, function (entry) {
-        if (entry.error) {
-            console.log(entry.error.stack)
-        }
-    })
+    this._logger = constructor.logger
     this._completed = coalesce(constructor.completed, noop)
     this._object = object
     if (constructor._defaultUse) {
@@ -137,14 +140,6 @@ function createProperties (properties) {
     }
 }
 
-function raise (statusCode, description, headers) {
-    throw interrupt('http', createProperties({
-        statusCode: statusCode,
-        description: description,
-        headers: headers
-    }))
-}
-
 Reactor.prototype._respond = cadence(function (async, envelope) {
     var work = envelope.body
     var next = work.next
@@ -155,7 +150,6 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
     entry.health.start = JSON.parse(JSON.stringify(this.turnstile.health))
 
     work.request.entry = entry
-    work.request.raise = raise
 
     if (envelope.timedout) {
         work.operation = Operation([ this, '_timeout' ])
@@ -172,20 +166,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                     }
                     work.operation.apply(null, [ work.request ].concat(work.vargs, async()))
                 }, function () {
-                    var vargs = Array.prototype.slice.call(arguments)
-
-                    var result = vargs.shift()
-                    var statusCode = (typeof vargs[0] == 'number') ? vargs.shift() : 200
-                    var description = coalesce(http.STATUS_CODES[statusCode], 'unknown')
-                    if (typeof vargs[0] == 'string') {
-                        description = vargs.shift()
-                    }
-                    if (vargs[0] == null) {
-                        vargs.shift()
-                    }
-                    var headers = coalesce(vargs.shift(), {})
-
-                    return [ result, statusCode, description, headers ]
+                    return arrayed(Array.prototype.slice.call(arguments))
                 })
             }, function (caught) {
                 for (;;) {
@@ -193,16 +174,19 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                         return rescue(/^reactor#http$/m, function (error) {
                             var statusCode = error.statusCode
                             var description = coalesce(error.description, http.STATUS_CODES[statusCode])
-                            var body = coalesce(error.body, description)
                             var headers = coalesce(error.headers, {})
+                            var body = coalesce(error.body, description)
 
                             entry.error = coalesce(error.cause)
 
                             interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
 
-                            headers['content-type'] = 'application/json'
-
-                            return [ description, statusCode, description, headers ]
+                            return {
+                                statusCode,
+                                description: description,
+                                headers: headers,
+                                body: body
+                            }
                         })(caught)
                     } catch (error) {
                         if (
@@ -217,31 +201,15 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             error = { statusCode: 307, location: error }
                         }
                         if (Array.isArray(error)) {
-                            error = error.slice()
-                            var statusCode = typeof error[0] == 'number' ? error.shift() : 503
-                            var body = error.shift() || null
-                            var description = coalesce(http.STATUS_CODES[statusCode])
-                            if (typeof vargs[0] == 'string') {
-                                description = error.shift()
-                            }
-                            if (body == null) {
-                                body = description
-                            }
-                            error = {
-                                statusCode: statusCode,
-                                description: description,
-                                body: needBody ? description : body,
-                                headers: coalesce(error.shift(), {})
-                            }
-                        }
-                        if (
+                            error = interrupt('http', arrayed(error.slice()))
+                        } else if (
                             ! (error instanceof Error) &&
                             typeof error == 'object' &&
                             typeof error.statusCode == 'number' &&
                             !isNaN(error.statusCode) &&
                             (error.statusCode | 0) === error.statusCode &&
                             Math.floor(error.statusCode / 100) <= 5 &&
-                            Math.floor(error.statusCode / 100) >= 3
+                            Math.floor(error.statusCode / 100) >= 2
                         ) {
                             var properties = createProperties(error)
                             if (error.location) {
@@ -255,34 +223,29 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                     }
                 }
             }])
-        }, function (result, statusCode, description, headers) {
+        }, function (responder) {
             var body, f
-            if (typeof result == 'function') {
-                f = result
+            if (typeof responder.body == 'function') {
+                f = responder.body
             } else {
-                if (typeof result == 'string') {
-                    if (!('content-type' in headers)) {
-                        headers['content-type'] = 'text/plain'
-                        result = new Buffer(result)
-                    } else if (headers['content-type'] == 'application/json') {
-                        result = new Buffer(JSON.stringify(result) + '\n')
-                    }
-                } else if (!('content-type' in headers)) {
-                    headers['content-type'] = 'application/json'
-                    result = new Buffer(JSON.stringify(result) + '\n')
+                if (!('content-type' in responder.headers)) {
+                    responder.headers['content-type'] = 'application/json'
+                }
+                if (responder.headers['content-type'] == 'application/json') {
+                    responder.body = new Buffer(JSON.stringify(responder.body) + '\n')
                 }
                 f = function (response) {
-                    response.end(result)
+                    response.end(responder.body)
                 }
             }
 
-            work.response.writeHead(statusCode, description, headers)
+            work.response.writeHead(responder.statusCode, responder.description, responder.headers)
 
             entry.when.headers = Date.now()
 
-            entry.statusCode = statusCode
-            entry.description = description
-            entry.headers = headers
+            entry.statusCode = responder.statusCode
+            entry.description = responder.description
+            entry.headers = responder.headers
 
             var finish = delta(async()).ee(work.response).on('finish')
 
@@ -323,20 +286,16 @@ Reactor.send = function (properties, buffer) {
     var headers = JSON.parse(JSON.stringify(properties.headers))
     delete headers['content-length']
     delete headers['transfer-encoding']
-    return [ buffer, properties.statusCode, properties.statusMessage, headers ]
-}
-
-Reactor.string = function (statusCode, contentType, text) {
-    return [ new Buffer(text), statusCode, { 'content-type': contentType } ]
+    return [ properties.statusCode, properties.statusMessage, headers, buffer ]
 }
 
 Reactor.stream = function (properties, stream) {
-    var headers = JSON.parse(JSON.stringify(properties.headers))
-    delete headers['content-length']
-    headers['transfer-encoding'] = 'chunked'
-    return [ function (response) {
-        stream.pipe(response)
-    }, properties.statusCode, properties.statusMessage, headers ]
+    var vargs = Array.prototype.slice.call(arguments)
+    var stream = vargs.shift()
+    var response = arrayed([ function (response) { stream.pipe(response) } ].concat(vargs))
+    response.headers['content-length']
+    response.headers['transfer-encoding'] = 'chunked'
+    return [ response.statusCode, response.description, response.headers, response.body ]
 }
 
 module.exports = Reactor
