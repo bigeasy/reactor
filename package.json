@@ -32,7 +32,7 @@
                             "magazine":                     "3.0.x",
                             "nop":                          "1.0.x",
                             "operation":                    "1.6.x",
-                            "rescue":                       "3.0.x",
+                            "rescue":                       "3.2.x",
                             "turnstile":                    "3.2.x"
     },
     "devDependencies":
