@@ -29,7 +29,7 @@
                             "express-auth-parser":          "0.1.2",
                             "extant":                       "1.0.x",
                             "interrupt":                    "5.0.x",
-                            "magazine":                     "3.0.x",
+                            "magazine":                     "3.2.x",
                             "nop":                          "1.0.x",
                             "operation":                    "1.6.x",
                             "rescue":                       "3.2.x",
