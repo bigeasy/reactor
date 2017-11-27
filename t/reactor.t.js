@@ -89,7 +89,7 @@ function prove (async, assert) {
     Service.prototype.callbacky = cadence(function (async) {
         var through = new stream.PassThrough
         through.end('x\n')
-        return Reactor.stream(through)
+        return Reactor.stream({ 'content-type': 'text/plain' }, through)
     })
 
     Service.prototype.callbackThrown = cadence(function (async) {

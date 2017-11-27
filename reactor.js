@@ -291,8 +291,9 @@ Reactor.send = function (properties, buffer) {
 
 Reactor.stream = function (properties, stream) {
     var vargs = Array.prototype.slice.call(arguments)
-    var stream = vargs.shift()
-    var response = arrayed([ function (response) { stream.pipe(response) } ].concat(vargs))
+    var stream = vargs.pop()
+    vargs.push(function (response) { stream.pipe(response) })
+    var response = arrayed(vargs)
     response.headers['content-length']
     response.headers['transfer-encoding'] = 'chunked'
     return [ response.statusCode, response.description, response.headers, response.body ]
