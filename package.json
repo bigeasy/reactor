@@ -38,7 +38,7 @@
     "devDependencies":
     {
                             "proof":                        "3.0.x",
-                            "vizsla":                       "10.2.x"
+                            "vizsla":                       "10.3.x"
     },
     "main":                 "reactor",
     "scripts":
