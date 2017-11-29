@@ -75,7 +75,7 @@ function prove (async, assert) {
     })
 
     Service.prototype.response = cadence(function (async) {
-        return Reactor.resend(200, { 'content-type': 'text/plain' }, 'responded')
+        return Reactor.resend(200, { 'content-type': 'application/json' }, new Buffer(JSON.stringify({ value: 'responded' })))
     })
 
     Service.prototype.resource = cadence(function (async, request, id) {
@@ -143,7 +143,7 @@ function prove (async, assert) {
         assert(body, { key: 'value' }, 'json')
         ua.fetch(session, { url: '/response' }, async())
     }, function (body, response) {
-        assert(body.toString(), 'responded', 'json')
+        assert(body, { value: 'responded' }, 'resend')
         ua.fetch(session, {
             url: '/post',
             headers: { 'content-type': 'application/json' },

@@ -231,7 +231,10 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                 if (!('content-type' in responder.headers)) {
                     responder.headers['content-type'] = 'application/json'
                 }
-                if (responder.headers['content-type'] == 'application/json') {
+                if (
+                    !Buffer.isBuffer(responder.body) &&
+                    responder.headers['content-type'] == 'application/json'
+                ) {
                     responder.body = new Buffer(JSON.stringify(responder.body) + '\n')
                 }
                 f = function (response) {
