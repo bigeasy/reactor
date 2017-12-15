@@ -7,8 +7,8 @@
 
     "keywords":
     [
-                            "queue", "asynchronous", "graph", "make", "rake",
-                            "javascript"
+                            "cadence", "queue", "asynchronous", "graph", "make",
+                            "rake", "javascript"
     ],
     "author":               "Alan Gutierrez <alan@prettyrobots.com>",
     "homepage":             "http://bigeasy.github.com/reactor",
