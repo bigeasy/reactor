@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>authenticator.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+
+
+                <a class="source" href="arrayed.js.html">
+                  arrayed.js
+                </a>
+
+
+                <a class="source" href="authenticator.js.html">
+                  authenticator.js
+                </a>
+
+
+                <a class="source" href="reactor.js.html">
+                  reactor.js
+                </a>
+
+            </div>
+          </div>
+        </li>
+      </ul>
+
+    <ul class="sections">
+
+          <li id="title">
+              <div class="annotation">
+                  <h1>authenticator.js</h1>
+              </div>
+          </li>
+
+
+
+        <li id="section-1">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> crypto = <span class="hljs-built_in">require</span>(<span class="hljs-string">'crypto'</span>),
+    cadence = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cadence'</span>),
+    Cache = <span class="hljs-built_in">require</span>(<span class="hljs-string">'magazine'</span>)
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Authenticator</span> (<span class="hljs-params">auth</span>) </span>{
+    <span class="hljs-keyword">this</span>._auth = <span class="hljs-keyword">new</span> Buffer(auth).toString(<span class="hljs-string">'base64'</span>)
+    <span class="hljs-keyword">this</span>._magazine = <span class="hljs-keyword">new</span> Cache().createMagazine()
+    <span class="hljs-keyword">this</span>.authorize = <span class="hljs-keyword">this</span>.authenticate.bind(<span class="hljs-keyword">this</span>)
+    <span class="hljs-keyword">this</span>.tokenize = <span class="hljs-keyword">this</span>.token.bind(<span class="hljs-keyword">this</span>)
+}
+
+Authenticator.prototype.token = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, request</span>) </span>{
+    <span class="hljs-keyword">var</span> authorized =
+        request.authorization &amp;&amp;
+        request.authorization.scheme == <span class="hljs-string">'Basic'</span> &amp;&amp;
+        request.authorization.credentials == <span class="hljs-keyword">this</span>._auth
+    <span class="hljs-keyword">if</span> (!authorized) {
+        <span class="hljs-keyword">throw</span> <span class="hljs-number">401</span>
+    }
+    <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+        crypto.randomBytes(<span class="hljs-number">16</span>, <span class="hljs-keyword">async</span>())
+    }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">bytes</span>) </span>{
+        <span class="hljs-keyword">var</span> hash = crypto.createHash(<span class="hljs-string">'sha256'</span>)
+        hash.update(bytes)
+        <span class="hljs-keyword">var</span> accessToken = hash.digest(<span class="hljs-string">'hex'</span>)
+        <span class="hljs-keyword">this</span>._magazine.hold(accessToken, <span class="hljs-literal">true</span>).release()
+        <span class="hljs-keyword">return</span> { <span class="hljs-attr">token_type</span>: <span class="hljs-string">'Bearer'</span>, <span class="hljs-attr">access_token</span>: accessToken }
+    })
+})
+
+Authenticator.prototype.authenticate = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">request</span>) </span>{
+    <span class="hljs-keyword">if</span> (!Authenticator.isBearer(request)) {
+        <span class="hljs-keyword">throw</span> <span class="hljs-number">401</span>
+    }
+    <span class="hljs-keyword">this</span>._magazine.expire(<span class="hljs-number">1000</span> * <span class="hljs-number">60</span> * <span class="hljs-number">60</span> * <span class="hljs-number">24</span>) <span class="hljs-comment">// yesterday</span>
+    <span class="hljs-keyword">var</span> token = request.authorization.credentials
+    <span class="hljs-keyword">var</span> cartridge = <span class="hljs-keyword">this</span>._magazine.hold(token, <span class="hljs-literal">false</span>), authorized
+    <span class="hljs-keyword">if</span> (cartridge.value) {
+        cartridge.release()
+    } <span class="hljs-keyword">else</span> {
+        cartridge.remove()
+        <span class="hljs-keyword">throw</span> <span class="hljs-number">401</span>
+    }
+}
+
+Authenticator.isBearer = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">request</span>) </span>{
+    <span class="hljs-keyword">return</span> request.authorization &amp;&amp; request.authorization.scheme == <span class="hljs-string">'Bearer'</span>
+}
+
+<span class="hljs-built_in">module</span>.exports = Authenticator
+
+</pre></div></div>
+
+        </li>
+
+    </ul>
+  </div>
+</body>
+</html>
