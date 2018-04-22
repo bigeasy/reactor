@@ -28,7 +28,7 @@
                             "dispatch":                     "1.0.1",
                             "express-auth-parser":          "0.1.2",
                             "extant":                       "1.0.x",
-                            "interrupt":                    "6.1.x",
+                            "interrupt":                    "6.2.x",
                             "magazine":                     "3.2.x",
                             "media-typer":                  "0.3.x",
                             "nop":                          "1.0.x",
