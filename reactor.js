@@ -12,7 +12,7 @@ var dispatch = require('dispatch')
 var interrupt = require('interrupt').createInterrupter('reactor')
 
 // Contextualized callbacks and event handlers.
-var Operation = require('operation/variadic')
+var Operation = require('operation')
 
 // Evented work queue.
 var Turnstile = require('turnstile')
