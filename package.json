@@ -24,7 +24,7 @@
                             "body-parser":                  "1.18.3",
                             "cadence":                      "1.0.x",
                             "connect":                      "3.6.6",
-                            "delta":                        "1.2.x",
+                            "delta":                        "1.4.x",
                             "dispatch":                     "1.0.1",
                             "express-auth-parser":          "0.1.2",
                             "extant":                       "1.0.x",
