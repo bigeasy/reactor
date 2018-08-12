@@ -9,7 +9,7 @@ var delta = require('delta')
 var dispatch = require('dispatch')
 
 // Exceptions that you can catch by type.
-var interrupt = require('interrupt').createInterrupter('reactor')
+var Interrupt = require('interrupt').createInterrupter('reactor')
 
 // Contextualized callbacks and event handlers.
 var Operation = require('operation')
@@ -183,7 +183,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
                             entry.error = coalesce(error.cause)
 
-                            interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
+                            Interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
 
                             return {
                                 statusCode,
@@ -205,7 +205,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             error = { statusCode: 307, location: error }
                         }
                         if (Array.isArray(error)) {
-                            error = interrupt('http', arrayed(error.slice()))
+                            error = new Interrupt('http', arrayed(error.slice()))
                         } else if (
                             ! (error instanceof Error) &&
                             typeof error == 'object' &&
@@ -219,7 +219,8 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             if (error.location) {
                                 properties.headers.location = error.location
                             }
-                            error = interrupt('http', properties, { cause: coalesce(error.cause) })
+                            properties.cause = coalesce(error.cause)
+                            error = new Interrupt('http', properties)
                         } else {
                             error = { statusCode: 500, cause: error }
                         }
