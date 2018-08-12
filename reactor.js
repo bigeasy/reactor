@@ -19,7 +19,7 @@ var Turnstile = require('turnstile')
 Turnstile.Queue = require('turnstile/queue')
 
 // Catch exceptions based on a regex match of an error message or property.
-var rescue = require('rescue')
+var rescue = require('rescue/redux')
 
 // Return the first not null-like value.
 var coalesce = require('extant')
@@ -174,7 +174,8 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             }, function (caught) {
                 for (;;) {
                     try {
-                        return rescue(/^reactor#http$/m, function (error) {
+                        return rescue(/^reactor#http$/m, function (rescued) {
+                            var error = rescued.errors.shift()
                             var statusCode = error.statusCode
                             var description = coalesce(error.description, http.STATUS_CODES[statusCode])
                             var headers = coalesce(error.headers, {})
