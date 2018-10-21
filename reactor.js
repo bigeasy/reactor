@@ -74,6 +74,7 @@ function handler (queue, before, operation) {
     return function (request, response, next) {
         var vargs = Array.prototype.slice.call(arguments, 3)
         request.entry = {
+            pushed: Date.now(),
             when: {
                 push: process.hrtime(),
                 start: null,
