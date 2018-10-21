@@ -32,6 +32,8 @@ var typer = require('media-typer')
 
 var arrayed = require('./arrayed')
 
+var duration = require('./duration')
+
 function Constructor (object, dispatch) {
     this._object = object
     this._dispatch = dispatch
@@ -73,7 +75,7 @@ function handler (queue, before, operation) {
         var vargs = Array.prototype.slice.call(arguments, 3)
         request.entry = {
             when: {
-                push: Date.now(),
+                push: process.hrtime(),
                 start: null,
                 headers: null,
                 finish: null
@@ -149,7 +151,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
     var entry = work.request.entry
 
-    entry.when.start = Date.now()
+    entry.when.start = process.hrtime()
     entry.health.start = JSON.parse(JSON.stringify(this.turnstile.health))
 
     work.request.entry = entry
@@ -250,7 +252,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
             work.response.writeHead(responder.statusCode, responder.description, responder.headers)
 
-            entry.when.headers = Date.now()
+            entry.when.headers = process.hrtime()
 
             entry.statusCode = responder.statusCode
             entry.description = responder.description
@@ -276,11 +278,11 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
         })
     }, function () {
         entry.health.done = JSON.parse(JSON.stringify(this.turnstile.health))
-        entry.when.finish = Date.now()
+        entry.when.finish = process.hrtime()
         entry.duration = {
-            start: entry.when.start - entry.when.push,
-            headers: entry.when.headers - entry.when.push,
-            finish: entry.when.finish - entry.when.push
+            start: duration(entry.when.push, entry.when.start),
+            headers: duration(entry.when.push, entry.when.headers),
+            finish: duration(entry.when.push, entry.when.finish)
         }
         this._logger.call(null, entry)
         this._completed.call(null, entry)
