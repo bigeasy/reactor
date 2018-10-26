@@ -30,7 +30,7 @@
                             "extant":                       "1.0.x",
                             "interrupt":                    "6.3.x",
                             "magazine":                     "3.2.x",
-                            "media-typer":                  "0.3.x",
+                            "media-typer":                  "1.0.x",
                             "nop":                          "1.0.x",
                             "operation":                    "2.0.x",
                             "rescue":                       "4.1.x",
