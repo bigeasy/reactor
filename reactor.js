@@ -28,7 +28,7 @@ var coalesce = require('extant')
 var noop = require('nop')
 
 // MIME type parser.
-var typer = require('media-typer')
+var typer = require('content-type')
 
 var arrayed = require('./arrayed')
 
@@ -242,7 +242,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                 var type = typer.parse(responder.headers['content-type'])
                 if (
                     !Buffer.isBuffer(responder.body) &&
-                    type.type + '/' + type.subtype == 'application/json'
+                    type.type == 'application/json'
                 ) {
                     responder.body = new Buffer(JSON.stringify(responder.body) + '\n')
                 }
