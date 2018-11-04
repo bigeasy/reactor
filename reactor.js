@@ -181,7 +181,12 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                             var headers = coalesce(error.headers, {})
                             var body = coalesce(error.body, description)
 
-                            entry.error = coalesce(error.cause)
+                            if (error.causes.length != 0) {
+                                entry.error = {
+                                    message: error.causes[0].message,
+                                    stack: error.causes[0].stack
+                                }
+                            }
 
                             Interrupt.assert(description != null, 'unknown.http.status', { statusCode: statusCode })
 
