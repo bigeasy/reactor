@@ -15,7 +15,7 @@ var Interrupt = require('interrupt').createInterrupter('reactor')
 var Operation = require('operation')
 
 // Evented work queue.
-var Turnstile = require('turnstile')
+var Turnstile = require('turnstile/redux')
 Turnstile.Queue = require('turnstile/queue')
 
 // Catch exceptions based on a regex match of an error message or property.
@@ -133,7 +133,7 @@ function Reactor (object, configurator) {
     this.middleware = require('connect')().use(dispatch(dispatcher))
 }
 
-Reactor.prototype._timeout = cadence(function () { throw 503 })
+Reactor.prototype._canceled = cadence(function () { throw 503 })
 
 function createProperties (properties) {
     return {
@@ -154,8 +154,8 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
 
     work.request.entry = entry
 
-    if (envelope.timedout) {
-        work.operation = Operation([ this, '_timeout' ])
+    if (envelope.canceled) {
+        work.operation = Operation([ this, '_canceled' ])
     }
 
     var finish
