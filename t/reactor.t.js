@@ -35,7 +35,6 @@ function prove (async, assert) {
             } ])
 
             constructor.dispatch('GET /', 'index')
-            constructor.dispatch('GET /error', 'error')
             constructor.dispatch('GET /throw/number', 'throwNumber')
             constructor.dispatch('GET /throw/redirect', 'throwRedirect')
             constructor.dispatch('GET /throw/array', 'throwArray')

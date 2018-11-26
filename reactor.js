@@ -12,7 +12,7 @@ var dispatch = require('dispatch')
 var Interrupt = require('interrupt').createInterrupter('reactor')
 
 // Contextualized callbacks and event handlers.
-var Operation = require('operation')
+var operation = require('operation')
 
 // Evented work queue.
 var Turnstile = require('turnstile/redux')
@@ -64,8 +64,9 @@ Constructor.prototype.use = function () {
 }
 
 Constructor.prototype.dispatch = function () {
-    var vargs = Array.prototype.slice.call(arguments)
-    this._dispatch[vargs.shift()] = Operation(vargs, { object: this._object })
+    var vargs = []
+    vargs.push.apply(vargs, arguments)
+    this._dispatch[vargs.shift()] = operation.shift.call(this._object, vargs)
 }
 
 function handler (queue, before, operation) {
@@ -155,7 +156,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
     work.request.entry = entry
 
     if (envelope.canceled) {
-        work.operation = Operation([ this, '_canceled' ])
+        work.operation = operation.shift([ this, '_canceled' ])
     }
 
     var finish
