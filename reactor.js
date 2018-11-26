@@ -15,7 +15,7 @@ var Interrupt = require('interrupt').createInterrupter('reactor')
 var operation = require('operation')
 
 // Evented work queue.
-var Turnstile = require('turnstile/redux')
+var Turnstile = require('turnstile')
 Turnstile.Queue = require('turnstile/queue')
 
 // Catch exceptions based on a regex match of an error message or property.
