@@ -1,10 +1,10 @@
 require('proof')(7, require('cadence')(prove))
 
-function prove (async, assert) {
+function prove (async, okay) {
     var Authenticator = require('../authenticator')
 
-    assert(!Authenticator.isBearer({}), 'no authentication')
-    assert(!Authenticator.isBearer({ authorization: { scheme: 'Basic' } }), 'not bearer')
+    okay(!Authenticator.isBearer({}), 'no authentication')
+    okay(!Authenticator.isBearer({ authorization: { scheme: 'Basic' } }), 'not bearer')
 
     var authenticator = new Authenticator('a:z')
 
@@ -16,7 +16,7 @@ function prove (async, assert) {
             }
         }, async())
     }, function (error) {
-        assert(error, 401, 'basic auth forbidden code')
+        okay(error, 401, 'basic auth forbidden code')
     }], function () {
         authenticator.token({
             authorization: {
@@ -25,12 +25,12 @@ function prove (async, assert) {
             }
         }, async())
     }, function (response) {
-        assert(response.token_type, 'Bearer', 'basic auth token type')
-        assert(response.access_token, 'basic auth access token')
+        okay(response.token_type, 'Bearer', 'basic auth token type')
+        okay(response.access_token, 'basic auth access token')
         try {
             authenticator.authenticate({})
         } catch (error) {
-            assert(error, 401, 'no authorization forbidden code')
+            okay(error, 401, 'no authorization forbidden code')
         }
         try {
             authenticator.authenticate({
@@ -40,7 +40,7 @@ function prove (async, assert) {
                 }
             })
         } catch (error) {
-            assert(error, 401, 'bearer forbidden code')
+            okay(error, 401, 'bearer forbidden code')
         }
         authenticator.authenticate({
             authorization: {

@@ -1,6 +1,6 @@
 require('proof')(24, require('cadence')(prove))
 
-function prove (async, assert) {
+function prove (async, okay) {
     var cadence = require('cadence')
     var Reactor = require('..')
     var UserAgent = require('vizsla')
@@ -22,7 +22,7 @@ function prove (async, assert) {
             constructor.logger = function (entry) {
                 if (logs.length != 0) {
                     var expect = logs.shift()
-                    assert(expect.error, entry.error.message, expect.message)
+                    okay(expect.error, entry.error.message, expect.message)
                 }
                 logger(entry)
             }
@@ -118,32 +118,32 @@ function prove (async, assert) {
     }], function () {
         ua.fetch(session, { parse: 'text' }, async())
     }, function (body) {
-        assert(body.toString(), 'Service API', 'get')
+        okay(body.toString(), 'Service API', 'get')
         ua.fetch(session, { url: '/throw/number', parse: UserAgent.json(4) }, async())
     }, function (body, response) {
-        assert(response.statusCode, 401, 'thrown number status code')
-        assert(body, 'Unauthorized', 'thrown number message')
+        okay(response.statusCode, 401, 'thrown number status code')
+        okay(body, 'Unauthorized', 'thrown number message')
         ua.fetch(session, { url: '/throw/redirect', parse: UserAgent.json(3) }, async())
     }, function (body, response) {
-        assert(response.statusCode, 307, 'thrown redirect status code')
-        assert(response.headers.location, '/redirect', 'thrown redirect location')
-        assert(body, 'Temporary Redirect', 'thrown redirect message')
+        okay(response.statusCode, 307, 'thrown redirect status code')
+        okay(response.headers.location, '/redirect', 'thrown redirect location')
+        okay(body, 'Temporary Redirect', 'thrown redirect message')
         ua.fetch(session, { url: '/throw/array', parse: 'json' }, async())
     }, function (body, response) {
-        assert(response.statusCode, 200, 'thrown array status code')
-        assert(body, {}, 'thrown array body')
+        okay(response.statusCode, 200, 'thrown array status code')
+        okay(body, {}, 'thrown array body')
         ua.fetch(session, { url: '/exception', parse: UserAgent.json(5) }, async())
     }, function (body, response) {
-        assert(response.statusCode, 500, 'exception status code')
+        okay(response.statusCode, 500, 'exception status code')
         // Node.js 0.10 does not parse the status messsage.
-        assert(coalesce(response.statusMessage, 'Internal Server Error'), 'Internal Server Error', 'exception status message')
-        assert(body, 'Internal Server Error', 'exception status code')
+        okay(coalesce(response.statusMessage, 'Internal Server Error'), 'Internal Server Error', 'exception status message')
+        okay(body, 'Internal Server Error', 'exception status code')
         ua.fetch(session, { url: '/json', parse: 'json' }, async())
     }, function (body, response) {
-        assert(body, { key: 'value' }, 'json')
+        okay(body, { key: 'value' }, 'json')
         ua.fetch(session, { url: '/response', parse: 'json' }, async())
     }, function (body, response) {
-        assert(body, { value: 'responded' }, 'resend')
+        okay(body, { value: 'responded' }, 'resend')
         ua.fetch(session, {
             url: '/post',
             headers: { 'content-type': 'application/json' },
@@ -152,28 +152,28 @@ function prove (async, assert) {
         }, async())
     }, function (body, response) {
         console.log(body)
-        assert(response.statusCode, 400, 'cannot parse')
-        assert(coalesce(response.statusMessage, 'Bad Request'), 'Bad Request', 'cannot parse message')
-        assert(body, 'Bad Request', 'cannot parse body')
+        okay(response.statusCode, 400, 'cannot parse')
+        okay(coalesce(response.statusMessage, 'Bad Request'), 'Bad Request', 'cannot parse message')
+        okay(body, 'Bad Request', 'cannot parse body')
         ua.fetch(session, { url: '/callbacky', parse: 'text' }, async())
     }, function (body, response) {
-        assert(body.toString(), 'x\n', 'callbacky')
+        okay(body.toString(), 'x\n', 'callbacky')
         logs.push({
             error: 'foo',
             message: 'error during stream'
         })
         ua.fetch(session, { url: '/callback/thrown', parse: 'dump' }, async())
     }, function (body, response) {
-        assert(response.statusCode, 200, 'callback thrown')
+        okay(response.statusCode, 200, 'callback thrown')
         ua.fetch(session, { url: '/resources/123', parse: 'json' }, async())
     }, function (body, response) {
-        assert(body, { id: '123' }, 'resource id')
+        okay(body, { id: '123' }, 'resource id')
         async(function () {
             service.notify = async()
             async(function () {
                 ua.fetch(session, { url: '/hang', parse: 'json' }, async())
             }, function (body, response) {
-                assert(body, { hang: true }, 'delay replied')
+                okay(body, { hang: true }, 'delay replied')
             })
             async(function () {
                 setTimeout(async(), 250)
@@ -182,7 +182,7 @@ function prove (async, assert) {
                 ua.fetch(session, { url: '/json', parse: 'json' }, async())
                 service.wait()
             }, function (body, response) {
-                assert(body, { key: 'value' }, 'flush replied')
+                okay(body, { key: 'value' }, 'flush replied')
             })
         })
         async(function () {
@@ -190,8 +190,8 @@ function prove (async, assert) {
         }, function () {
             ua.fetch(session, { url: '/json', parse: UserAgent.json(5) }, async())
         }, function (body, response) {
-            assert(response.statusCode, 503, 'timeout code')
-            assert(body, 'Service Unavailable', 'timeout message')
+            okay(response.statusCode, 503, 'timeout code')
+            okay(body, 'Service Unavailable', 'timeout message')
         })
     })
 }
