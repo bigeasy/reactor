@@ -19,7 +19,7 @@ var Turnstile = require('turnstile')
 Turnstile.Queue = require('turnstile/queue')
 
 // Catch exceptions based on a regex match of an error message or property.
-var rescue = require('rescue/redux')
+var rescue = require('rescue')
 
 // Return the first not null-like value.
 var coalesce = require('extant')
