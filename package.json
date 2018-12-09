@@ -38,8 +38,9 @@
     },
     "devDependencies":
     {
+                            "destructible":                 "0.41.x",
                             "proof":                        "5.0.x",
-                            "vizsla":                       "12.16.x"
+                            "vizsla":                       "12.17.x"
     },
     "main":                 "reactor",
     "scripts":
