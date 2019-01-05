@@ -32,7 +32,7 @@
                             "magazine":                     "5.0.x",
                             "content-type":                 "1.0.4",
                             "nop":                          "1.0.x",
-                            "operation":                    "4.0.x",
+                            "operation":                    "5.0.x",
                             "rescue":                       "5.0.x",
                             "turnstile":                    "5.0.x"
     },
