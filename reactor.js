@@ -308,10 +308,6 @@ Reactor.auth = function () {
     return require('express-auth-parser')
 }
 
-Reactor.urlencoded = function () {
-    return require('body-parser').urlencoded({ extended: false, limit: '64mb' })
-}
-
 Reactor.reactor = function (object, configure, turnstile) {
     return new Reactor(object, configure, turnstile)._middleware
 }

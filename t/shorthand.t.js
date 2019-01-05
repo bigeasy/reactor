@@ -26,7 +26,6 @@ function prove (okay, callback) {
             var app = connect()
                 .use(Reactor.json())
                 .use(Reactor.auth())
-                .use(Reactor.urlencoded())
                 .use(Reactor.reactor({
                     object: 0
                 }, function (configurator) {
