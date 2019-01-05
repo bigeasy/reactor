@@ -12,7 +12,7 @@ function prove (async, okay) {
     var Turnstile = require('turnstile')
 
     // Defaults, but we call the default functions below as well.
-    new Reactor(this, function (constructor) {})
+    new Reactor(this, {})
 
     var now = 0, logs = []
     function Service () {

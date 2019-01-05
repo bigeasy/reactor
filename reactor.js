@@ -118,7 +118,11 @@ function handler (queue, before, operation) {
 function Reactor (object, configure, turnstile) {
     this.turnstile = turnstile || new Turnstile
     var constructor = new Configurator(object, this._dispatch = {}, this.turnstile)
-    configure(constructor)
+    if (typeof configure == 'object') {
+        constructor.routes(configure)
+    } else {
+        configure(constructor)
+    }
     this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
     this._logger = constructor.logger
     this._completed = coalesce(constructor.completed, noop)
