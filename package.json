@@ -38,7 +38,7 @@
     },
     "devDependencies":
     {
-                            "destructible":                 "0.41.x",
+                            "destructible":                 "0.43.x",
                             "proof":                        "5.0.x",
                             "vizsla":                       "13.0.x"
     },
