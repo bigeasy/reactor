@@ -9,15 +9,14 @@ function prove (async, okay) {
     var coalesce = require('extant')
     var stream = require('stream')
 
+    var Turnstile = require('turnstile')
+
     // Defaults, but we call the default functions below as well.
     new Reactor(this, function (constructor) {})
 
     var now = 0, logs = []
     function Service () {
         this.reactor = new Reactor(this, function (constructor) {
-            constructor.turnstiles = 1
-            constructor.timeout = 5
-
             var logger = constructor.logger
             constructor.logger = function (entry) {
                 if (logs.length != 0) {
@@ -26,8 +25,6 @@ function prove (async, okay) {
                 }
                 logger(entry)
             }
-
-            constructor.Date = { now: function () { return now } }
 
             constructor.useDefault()
             constructor.use([ function (request, response, next) {
@@ -46,7 +43,11 @@ function prove (async, okay) {
             constructor.dispatch('GET /callbacky', 'callbacky')
             constructor.dispatch('GET /resources/:id', 'resource')
             constructor.dispatch('POST /post', 'post')
-        })
+        }, new Turnstile({
+            Date: { now: function () { return now } },
+            turnstiles: 1,
+            timeout: 5
+        }))
     }
 
     Service.prototype.index = cadence(function () {

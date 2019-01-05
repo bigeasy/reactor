@@ -32,11 +32,12 @@ var typer = require('content-type')
 
 var arrayed = require('./arrayed')
 
-function Constructor (object, dispatch) {
+function Constructor (object, dispatch, turnstile) {
     this._object = object
     this._dispatch = dispatch
     this._use = []
     this._defaultUse = true
+    this.turnstile = turnstile
     this.logger = function (entry) {
         if (entry.error) {
             console.log(entry.error.stack)
@@ -60,6 +61,12 @@ Constructor.prototype.use = function () {
         } else {
             this._use.push(varg)
         }
+    }
+}
+
+Constructor.prototype.routes = function (routes) {
+    for (var key in routes) {
+        this.dispatch(key, routes[key])
     }
 }
 
@@ -108,14 +115,10 @@ function handler (queue, before, operation) {
     }
 }
 
-function Reactor (object, configurator) {
-    var constructor = new Constructor(object, this._dispatch = {})
+function Reactor (object, configurator, turnstile) {
+    this.turnstile = turnstile || new Turnstile
+    var constructor = new Constructor(object, this._dispatch = {}, this.turnstile)
     configurator(constructor)
-    this.turnstile = new Turnstile({
-        Date: coalesce(constructor.Date, Date),
-        turnstiles: coalesce(constructor.turnstiles, 24),
-        timeout: coalesce(constructor.timeout)
-    })
     this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
     this._logger = constructor.logger
     this._completed = coalesce(constructor.completed, noop)
@@ -131,7 +134,7 @@ function Reactor (object, configurator) {
     for (var pattern in this._dispatch) {
         dispatcher[pattern] = handler(this._queue, before, this._dispatch[pattern])
     }
-    this.middleware = require('connect')().use(dispatch(dispatcher))
+    this.middleware = require('connect')().use(this._middleware = dispatch(dispatcher))
 }
 
 Reactor.prototype._canceled = cadence(function () { throw 503 })
@@ -292,6 +295,22 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
         this._completed.call(null, entry)
     })
 })
+
+Reactor.json = function () {
+    return require('body-parser').json({ limit: '64mb' })
+}
+
+Reactor.auth = function () {
+    return require('express-auth-parser')
+}
+
+Reactor.urlencoded = function () {
+    return require('body-parser').urlencoded({ extended: false, limit: '64mb' })
+}
+
+Reactor.reactor = function (object, configure, turnstile) {
+    return new Reactor(object, configure, turnstile)._middleware
+}
 
 Reactor.resend = function (statusCode, headers, body) {
     return Reactor.send({ statusCode: statusCode, headers: headers }, body)
