@@ -40,7 +40,7 @@
     {
                             "destructible":                 "0.41.x",
                             "proof":                        "5.0.x",
-                            "vizsla":                       "12.17.x"
+                            "vizsla":                       "13.0.x"
     },
     "main":                 "reactor",
     "scripts":
