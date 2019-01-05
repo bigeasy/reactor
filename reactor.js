@@ -32,7 +32,7 @@ var typer = require('content-type')
 
 var arrayed = require('./arrayed')
 
-function Constructor (object, dispatch, turnstile) {
+function Configurator (object, dispatch, turnstile) {
     this._object = object
     this._dispatch = dispatch
     this._use = []
@@ -45,13 +45,13 @@ function Constructor (object, dispatch, turnstile) {
     }
 }
 
-Constructor.prototype.useDefault = function () {
+Configurator.prototype.useDefault = function () {
     this.use(require('express-auth-parser'))
     this.use(require('body-parser').urlencoded({ extended: false, limit: '64mb' }))
     this.use(require('body-parser').json({ limit: '64mb' }))
 }
 
-Constructor.prototype.use = function () {
+Configurator.prototype.use = function () {
     var vargs = Array.prototype.slice.call(arguments)
     this._defaultUse = false
     while (vargs.length) {
@@ -64,13 +64,13 @@ Constructor.prototype.use = function () {
     }
 }
 
-Constructor.prototype.routes = function (routes) {
+Configurator.prototype.routes = function (routes) {
     for (var key in routes) {
         this.dispatch(key, routes[key])
     }
 }
 
-Constructor.prototype.dispatch = function () {
+Configurator.prototype.dispatch = function () {
     var vargs = []
     vargs.push.apply(vargs, arguments)
     this._dispatch[vargs.shift()] = operation.shift.call(this._object, vargs)
@@ -115,10 +115,10 @@ function handler (queue, before, operation) {
     }
 }
 
-function Reactor (object, configurator, turnstile) {
+function Reactor (object, configure, turnstile) {
     this.turnstile = turnstile || new Turnstile
-    var constructor = new Constructor(object, this._dispatch = {}, this.turnstile)
-    configurator(constructor)
+    var constructor = new Configurator(object, this._dispatch = {}, this.turnstile)
+    configure(constructor)
     this._queue = new Turnstile.Queue(this, '_respond', this.turnstile)
     this._logger = constructor.logger
     this._completed = coalesce(constructor.completed, noop)
