@@ -116,7 +116,7 @@ function handler (queue, before, operation) {
 }
 
 function Reactor (object, configure, turnstile) {
-    this.turnstile = turnstile || new Turnstile
+    this.turnstile = turnstile || new Turnstile({ turnstiles: 24 })
     var constructor = new Configurator(object, this._dispatch = {}, this.turnstile)
     if (typeof configure == 'object') {
         constructor.routes(configure)
