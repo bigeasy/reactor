@@ -288,7 +288,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             }])
         })
     }, function () {
-        entry.health.done = JSON.parse(JSON.stringify(this.turnstile.health))
+        entry.health.finish = JSON.parse(JSON.stringify(this.turnstile.health))
         entry.when.finish = Date.now()
         entry.duration = {
             start: entry.when.start - entry.when.push,
