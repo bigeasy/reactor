@@ -179,6 +179,7 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
                     }
                     work.operation.apply(null, [ work.request ].concat(work.vargs, async()))
                 }, function () {
+                    console.log(arguments)
                     return arrayed(Array.prototype.slice.call(arguments))
                 })
             }, function (caught) {

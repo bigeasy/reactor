@@ -1,7 +1,13 @@
-require('proof')(9, prove)
+require('proof')(10, prove)
 
 function prove (okay) {
     var arrayed = require('../arrayed')
+    okay(arrayed([{}]), {
+        statusCode: 200,
+        description: 'OK',
+        headers: {},
+        body: {}
+    }, 'object')
     okay(arrayed([]), {
         statusCode: 200,
         description: 'OK',
@@ -50,10 +56,10 @@ function prove (okay) {
         headers: {},
         body: 'hello, world'
     }, 'body only')
-    okay(arrayed([ 200, [] ]), {
+    okay(arrayed([ 200, [ 'content-type: text/plain', 'split::::', 'bad' ] ]), {
         statusCode: 200,
         description: 'OK',
-        headers: {},
-        body: []
-    }, 'headers only if object')
+        headers: { 'content-type': 'text/plain', 'split': ':::'},
+        body: 'OK'
+    }, 'arrayed headers')
 }
