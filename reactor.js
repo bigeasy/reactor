@@ -32,6 +32,8 @@ var typer = require('content-type')
 
 var arrayed = require('./arrayed')
 
+var explode = require('./explode')
+
 function Configurator (object, dispatch, turnstile) {
     this._object = object
     this._dispatch = dispatch
@@ -294,6 +296,9 @@ Reactor.prototype._respond = cadence(function (async, envelope) {
             start: entry.when.start - entry.when.push,
             headers: entry.when.headers - entry.when.push,
             finish: entry.when.finish - entry.when.push
+        }
+        if (entry.error) {
+            explode(entry, 'error', entry.error)
         }
         this._logger.call(null, entry)
         this._completed.call(null, entry)
