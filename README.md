@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/bigeasy/reactor.svg?branch=master)](https://travis-ci.org/bigeasy/reactor) [![Coverage Status](https://coveralls.io/repos/bigeasy/reactor/badge.svg?branch=master&service=github)](https://coveralls.io/github/bigeasy/reactor?branch=master)
-
 An asynchronous work queue. Reactor takes work and feeds it to an asynchronous
 function that accepts an error-first callback.
 
