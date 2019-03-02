@@ -39,7 +39,7 @@
     "devDependencies":
     {
                             "destructible":                 "1.0.x",
-                            "proof":                        "5.0.x",
+                            "proof":                        "7.0.x",
                             "vizsla":                       "13.0.x"
     },
     "main":                 "reactor",
