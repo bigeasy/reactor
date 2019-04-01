@@ -101,6 +101,7 @@ function handler (queue, before, operation) {
             request: {
                 method: request.method,
                 header: request.headers,
+                headers: request.headers,
                 url: request.url,
                 vargs: vargs
             }
