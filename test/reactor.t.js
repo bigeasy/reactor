@@ -75,7 +75,7 @@ function prove (async, okay) {
     })
 
     Service.prototype.response = cadence(function (async) {
-        return Reactor.resend(200, { 'content-type': 'application/json' }, new Buffer(JSON.stringify({ value: 'responded' })))
+        return Reactor.resend(200, { 'content-type': 'application/json' }, Buffer.from(JSON.stringify({ value: 'responded' })))
     })
 
     Service.prototype.resource = cadence(function (async, request, id) {
@@ -120,11 +120,17 @@ function prove (async, okay) {
         ua.fetch(session, { parse: 'text' }, async())
     }, function (body) {
         okay(body.toString(), 'Service API', 'get')
-        ua.fetch(session, { url: '/throw/number', parse: UserAgent.json(4) }, async())
+        ua.fetch(session, {
+            url: '/throw/number',
+            parse: { statusCode: '4', parser: 'json' }
+        }, async())
     }, function (body, response) {
         okay(response.statusCode, 401, 'thrown number status code')
         okay(body, 'Unauthorized', 'thrown number message')
-        ua.fetch(session, { url: '/throw/redirect', parse: UserAgent.json(3) }, async())
+        ua.fetch(session, {
+            url: '/throw/redirect',
+            parse: { statusCode: 3, parser: 'json' }
+        }, async())
     }, function (body, response) {
         okay(response.statusCode, 307, 'thrown redirect status code')
         okay(response.headers.location, '/redirect', 'thrown redirect location')
@@ -133,7 +139,10 @@ function prove (async, okay) {
     }, function (body, response) {
         okay(response.statusCode, 200, 'thrown array status code')
         okay(body, {}, 'thrown array body')
-        ua.fetch(session, { url: '/exception', parse: UserAgent.json(5) }, async())
+        ua.fetch(session, {
+            url: '/exception',
+            parse: { statusCode: 5, parser: 'json' }
+        }, async())
     }, function (body, response) {
         okay(response.statusCode, 500, 'exception status code')
         // Node.js 0.10 does not parse the status messsage.
@@ -149,7 +158,7 @@ function prove (async, okay) {
             url: '/post',
             headers: { 'content-type': 'application/json' },
             post: new Buffer('{'),
-            parse: UserAgent.json(4)
+            parse: { statusCode: 4, parser: 'json' }
         }, async())
     }, function (body, response) {
         console.log(body)
@@ -189,7 +198,10 @@ function prove (async, okay) {
         async(function () {
             setTimeout(async(), 50)
         }, function () {
-            ua.fetch(session, { url: '/json', parse: UserAgent.json(5) }, async())
+            ua.fetch(session, {
+                url: '/json',
+                parse: { statusCode: 5, parser: 'json' }
+            }, async())
         }, function (body, response) {
             okay(response.statusCode, 503, 'timeout code')
             okay(body, 'Service Unavailable', 'timeout message')

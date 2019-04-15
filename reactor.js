@@ -319,6 +319,7 @@ Reactor.reactor = function (object, configure, turnstile) {
 }
 
 Reactor.resend = function (statusCode, headers, body) {
+    console.log('>>', body.toString())
     return Reactor.send({ statusCode: statusCode, headers: headers }, body)
 }
 
