@@ -1,6 +1,6 @@
 {
     "name":                 "reactor",
-    "version":              "14.0.0",
+    "version":              "14.0.1",
     "description":
 
       "A work queue that pivots events to error-first callbacks.",
