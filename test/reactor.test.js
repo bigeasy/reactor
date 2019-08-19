@@ -39,6 +39,11 @@ describe('reactor', () => {
         method: 'get',
         f: service.hangup.bind(service),
         hangup: true
+    }, {
+        path: '/raw',
+        method: 'get',
+        f: (requst, reply) => reply.send('hello, world\n'),
+        raw: true
     }])
 
     before(() => reactor.fastify.listen(0))
@@ -143,5 +148,18 @@ describe('reactor', () => {
             error: null,
             path: '/hangup'
         }, 'ECONNRESET' ], 'test')
+    })
+
+    it('can get a raw function', async () => {
+        const test = []
+        reactor.once('reply', (entry) => test.push(entry))
+        const response = await axios.get(url('/raw'))
+        assert.equal(response.data, 'hello, world\n', 'got')
+        test[0].duration = 0
+        assert.deepStrictEqual(test, [{
+            code: 200,
+            duration: 0,
+            path: '/raw'
+        }], 'test')
     })
 })

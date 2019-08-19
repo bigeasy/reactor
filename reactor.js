@@ -5,9 +5,9 @@ class Reactor extends events.EventEmitter {
     constructor (routes) {
         super()
         const fastify = this.fastify = require('fastify')()
-        routes.forEach(route => {
+        for (const route of routes) {
             fastify[route.method](route.path, this._reply.bind(this, route))
-        })
+        }
     }
 
     _send (route, request, reply, now, result, error) {
@@ -27,14 +27,22 @@ class Reactor extends events.EventEmitter {
 
     async _reply (route, request, reply) {
         const now = Date.now()
-        try {
-            const result = await route.f.call(null, request, reply)
-            this._send(route, request, reply, now, result, null)
-        } catch (error) {
-            if (typeof error == 'number') {
-                this._send(route, request, reply, now, error, null)
-            } else {
-                this._send(route, request, reply, now, 500, error)
+        if (route.raw) {
+            try {
+                return await route.f.call(null, request, reply)
+            } finally {
+                this.emit('reply', { path: route.path, code: reply.res.statusCode, duration: Date.now() - now })
+            }
+        } else {
+            try {
+                const result = await route.f.call(null, request, reply)
+                this._send(route, request, reply, now, result, null)
+            } catch (error) {
+                if (typeof error == 'number') {
+                    this._send(route, request, reply, now, error, null)
+                } else {
+                    this._send(route, request, reply, now, 500, error)
+                }
             }
         }
     }
