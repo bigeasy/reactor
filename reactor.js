@@ -28,8 +28,7 @@ class Reactor extends events.EventEmitter {
     async _reply (route, request, reply) {
         const now = Date.now()
         try {
-            const promise = route.f.call(null, request, reply)
-            const result = (promise instanceof Promise) ? await promise : promise
+            const result = await route.f.call(null, request, reply)
             this._send(route, request, reply, now, result, null)
         } catch (error) {
             if (typeof error == 'number') {
