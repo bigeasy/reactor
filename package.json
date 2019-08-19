@@ -3,12 +3,12 @@
     "version":              "14.0.2",
     "description":
 
-      "A work queue that pivots events to error-first callbacks.",
+      "A fastify server builder.",
 
     "keywords":
     [
-                            "cadence", "queue", "asynchronous", "graph", "make",
-                            "rake", "javascript"
+                            "cadence", "queue", "asynchronous", "graph",
+                            "make", "rake", "javascript"
     ],
     "author":               "Alan Gutierrez <alan@prettyrobots.com>",
     "homepage":             "http://bigeasy.github.com/reactor",
@@ -21,30 +21,15 @@
     },
     "dependencies":
     {
-                            "body-parser":                  "1.18.3",
-                            "cadence":                      "3.0.x",
-                            "connect":                      "3.6.6",
-                            "delta":                        "3.0.x",
-                            "dispatch":                     "1.0.2",
-                            "express-auth-parser":          "0.1.2",
-                            "extant":                       "1.0.x",
-                            "interrupt":                    "7.0.x",
-                            "magazine":                     "5.0.x",
-                            "content-type":                 "1.0.4",
-                            "nop":                          "1.0.x",
-                            "operation":                    "5.0.x",
-                            "rescue":                       "5.0.x",
-                            "turnstile":                    "5.0.x"
+                            "fastify":                      "2.7.x"
     },
     "devDependencies":
     {
-                            "destructible":                 "2.0.x",
-                            "proof":                        "7.0.x",
-                            "vizsla":                       "14.0.x"
+                            "axios":                        "0.19.x"
     },
     "main":                 "reactor",
     "scripts":
     {
-                            "test": "proof test test/*.t.js"
+                            "test": "mocha test/*.test.js"
     }
 }
