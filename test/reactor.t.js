@@ -167,5 +167,5 @@ require('proof')(10, async (okay) => {
         })()
     })())
 
-    await destructible.promise
+    await destructible.destructed
 })
