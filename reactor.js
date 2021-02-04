@@ -18,7 +18,7 @@ class Reactor extends events.EventEmitter {
         }
         this.emit('reply', { path: route.path, code, duration: Date.now() - now, error })
         if (Math.floor(code / 100) != 2 && route.hangup) {
-            request.req.destroy()
+            request.raw.destroy()
         } else {
             reply.code(code)
             reply.send(body)
@@ -31,7 +31,7 @@ class Reactor extends events.EventEmitter {
             try {
                 return await route.f.call(null, request, reply)
             } finally {
-                this.emit('reply', { path: route.path, code: reply.res.statusCode, duration: Date.now() - now })
+                this.emit('reply', { path: route.path, code: reply.raw.statusCode, duration: Date.now() - now })
             }
         } else {
             try {
