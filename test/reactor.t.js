@@ -55,7 +55,7 @@ require('proof')(10, async (okay) => {
         return `http://127.0.0.1:${reactor.fastify.server.address().port}${path}`
     }
 
-    destructible.durable('test', (async () => {
+    destructible.ephemeral('test', async () => {
         await (async () => {
             const test = []
             reactor.once('reply', (entry) => test.push(entry))
@@ -165,7 +165,9 @@ require('proof')(10, async (okay) => {
                 path: '/raw'
             }], 'get a raw function')
         })()
-    })())
 
-    await destructible.destructed
+        destructible.destroy()
+    })
+
+    await destructible.promise
 })
