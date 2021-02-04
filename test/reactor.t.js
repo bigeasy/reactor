@@ -56,7 +56,7 @@ require('proof')(10, async (okay) => {
     }
 
     destructible.ephemeral('test', async () => {
-        await (async () => {
+        {
             const test = []
             reactor.once('reply', (entry) => test.push(entry))
             const response = await axios.get(url('/'))
@@ -68,9 +68,9 @@ require('proof')(10, async (okay) => {
                 error: null,
                 path: '/'
             }], 'get a sync function')
-        })()
+        }
 
-        await (async () => {
+        {
             const test = []
             reactor.once('reply', (entry) => test.push(entry))
             const response = await axios.get(url('/async'))
@@ -82,9 +82,9 @@ require('proof')(10, async (okay) => {
                 error: null,
                 path: '/async'
             }], 'get an aync function')
-        })()
+        }
 
-        await (async () => {
+        {
             const test = []
             reactor.once('reply', (entry) => test.push(entry))
             try {
@@ -99,9 +99,9 @@ require('proof')(10, async (okay) => {
                 error: null,
                 path: '/unauthorized'
             }, 401 ], 'get error code')
-        })()
+        }
 
-        await (async () => {
+        {
             const test = []
             reactor.once('reply', (entry) => test.push(entry))
             try {
@@ -116,9 +116,9 @@ require('proof')(10, async (okay) => {
                 error: null,
                 path: '/missing'
             }, 404 ], 'get thrown error code')
-        })()
+        }
 
-        await (async () => {
+        {
             const test = []
             reactor.once('reply', (entry) => test.push(entry))
             try {
@@ -134,9 +134,9 @@ require('proof')(10, async (okay) => {
                 error: 'error',
                 path: '/error'
             }, 500 ], 'get an error')
-        })()
+        }
 
-        await (async () => {
+        {
             const test = []
             reactor.once('reply', (entry) => test.push(entry))
             try {
@@ -151,9 +151,9 @@ require('proof')(10, async (okay) => {
                 error: null,
                 path: '/hangup'
             }, 'ECONNRESET' ], 'hangup on error')
-        })()
+        }
 
-        await (async () => {
+        {
             const test = []
             reactor.once('reply', (entry) => test.push(entry))
             const response = await axios.get(url('/raw'))
@@ -164,7 +164,7 @@ require('proof')(10, async (okay) => {
                 duration: 0,
                 path: '/raw'
             }], 'get a raw function')
-        })()
+        }
 
         destructible.destroy()
     })
