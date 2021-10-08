@@ -21,7 +21,7 @@
     },
     "dependencies":
     {
-                            "fastify":                      "3.21.3"
+                            "fastify":                      "3.22.0"
     },
     "devDependencies":
     {
