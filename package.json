@@ -25,7 +25,7 @@
     },
     "devDependencies":
     {
-                            "axios":                        "0.21.4",
+                            "axios":                        "0.22.0",
                             "destructible":                 "^7.0.0-alpha.70",
                             "proof":                        "^9.0.3"
     },
