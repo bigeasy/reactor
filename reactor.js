@@ -1,5 +1,6 @@
 const http = require('http')
 const events = require('events')
+const { coalesce } = require('extant')
 
 class Reactor extends events.EventEmitter {
     constructor (routes) {
@@ -10,13 +11,11 @@ class Reactor extends events.EventEmitter {
         }
     }
 
-    _send (route, request, reply, now, result, error) {
-        let body = result, code = 200
-        if (typeof result == 'number') {
-            code = result
+    _send (route, request, reply, now, code, body, headers, error) {
+        if (body == null) {
             body = { statusCode: code, message: http.STATUS_CODES[code] }
         }
-        this.emit('reply', { path: route.path, code, duration: Date.now() - now, error })
+        this.emit('reply', { path: route.path, code, duration: Date.now() - now, error, headers })
         if (Math.floor(code / 100) != 2 && route.hangup) {
             request.raw.destroy()
         } else {
@@ -36,12 +35,20 @@ class Reactor extends events.EventEmitter {
         } else {
             try {
                 const result = await route.f.call(null, request, reply)
-                this._send(route, request, reply, now, result, null)
+                if (typeof result == 'number') {
+                    this._send(route, request, reply, now, result, null, {}, null)
+                } else if (Array.isArray(result) && typeof result[0] == 'number') {
+                    this._send(route, request, reply, now, result[0], coalesce(result[1], http.STATUS_CODES[result[1]]), coalesce(result[2], {}), null)
+                } else {
+                    this._send(route, request, reply, now, 200, result, {}, null)
+                }
             } catch (error) {
                 if (typeof error == 'number') {
-                    this._send(route, request, reply, now, error, null)
+                    this._send(route, request, reply, now, error, null, {}, null)
+                } else if (Array.isArray(error) && typeof error[0] == 'number') {
+                    this._send(route, request, reply, now, error[0], coalesce(error[1], http.STATUS_CODES[error[1]]), coalesce(error[2], {}), null)
                 } else {
-                    this._send(route, request, reply, now, 500, error)
+                    this._send(route, request, reply, now, 500, null, {}, error)
                 }
             }
         }

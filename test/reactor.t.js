@@ -1,4 +1,4 @@
-require('proof')(10, async (okay) => {
+require('proof')(13, async (okay) => {
     const axios = require('axios')
     const Reactor = require('../reactor')
 
@@ -7,8 +7,12 @@ require('proof')(10, async (okay) => {
 
     class Service {
         index () { return 'Index\n' }
+        headers () { return [ 201, { created: true }, { 'X-Created': 'true' } ] }
         async async () { return { async: true } }
         async unauthorized () { return 401 }
+        async forbidden () {
+            throw [ 403, 'No!' ]
+        }
         missing () { throw 404 }
         error () { throw new Error('error') }
         hangup () { return 500 }
@@ -21,6 +25,10 @@ require('proof')(10, async (okay) => {
         method: 'get',
         f: service.index.bind(service)
     }, {
+        path: '/headers',
+        method: 'get',
+        f: service.headers.bind(service)
+    }, {
         path: '/async',
         method: 'get',
         f: service.async.bind(service)
@@ -32,6 +40,10 @@ require('proof')(10, async (okay) => {
         path: '/missing',
         method: 'get',
         f: service.missing.bind(service)
+    }, {
+        path: '/forbidden',
+        method: 'get',
+        f: service.forbidden.bind(service)
     }, {
         path: '/error',
         method: 'get',
@@ -64,10 +76,26 @@ require('proof')(10, async (okay) => {
             test[0].duration = 0
             okay(test, [{
                 code: 200,
+                headers: {},
                 duration: 0,
                 error: null,
                 path: '/'
             }], 'get a sync function')
+        }
+
+        {
+            const test = []
+            reactor.once('reply', (entry) => test.push(entry))
+            const response = await axios.get(url('/headers'))
+            okay(response.data, { created: true }, 'got headers body')
+            test[0].duration = 0
+            okay(test, [{
+                code: 201,
+                headers: { 'X-Created': 'true' },
+                duration: 0,
+                error: null,
+                path: '/headers'
+            }], 'get an aync function')
         }
 
         {
@@ -78,6 +106,7 @@ require('proof')(10, async (okay) => {
             test[0].duration = 0
             okay(test, [{
                 code: 200,
+                headers: {},
                 duration: 0,
                 error: null,
                 path: '/async'
@@ -95,10 +124,30 @@ require('proof')(10, async (okay) => {
             test[0].duration = 0
             okay(test, [{
                 code: 401,
+                headers: {},
                 duration: 0,
                 error: null,
                 path: '/unauthorized'
             }, 401 ], 'get error code')
+        }
+
+        {
+            const test = []
+            reactor.once('reply', (entry) => test.push(entry))
+            try {
+                await axios.get(url('/forbidden'))
+            } catch (error) {
+                test.push(error.response.status)
+            }
+            test[0].duration = 0
+            okay(test, [{
+                code: 403,
+                headers: {},
+                duration: 0,
+                error: null,
+                headers: {},
+                path: '/forbidden'
+            }, 403 ], 'get error code with specific message')
         }
 
         {
@@ -112,6 +161,7 @@ require('proof')(10, async (okay) => {
             test[0].duration = 0
             okay(test, [{
                 code: 404,
+                headers: {},
                 duration: 0,
                 error: null,
                 path: '/missing'
@@ -130,6 +180,7 @@ require('proof')(10, async (okay) => {
             test[0].error = test[0].error.message
             okay(test, [{
                 code: 500,
+                headers: {},
                 duration: 0,
                 error: 'error',
                 path: '/error'
@@ -149,7 +200,8 @@ require('proof')(10, async (okay) => {
                 code: 500,
                 duration: 0,
                 error: null,
-                path: '/hangup'
+                path: '/hangup',
+                headers: {}
             }, 'ECONNRESET' ], 'hangup on error')
         }
 
