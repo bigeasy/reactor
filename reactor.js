@@ -20,6 +20,7 @@ class Reactor extends events.EventEmitter {
             request.raw.destroy()
         } else {
             reply.code(code)
+            reply.headers(headers)
             reply.send(body)
         }
     }
