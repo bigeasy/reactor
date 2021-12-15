@@ -22,7 +22,7 @@
     "dependencies":
     {
                             "extant":                       "2.0.0-alpha.4",
-                            "fastify":                      "3.24.1"
+                            "fastify":                      "3.25.0"
     },
     "devDependencies":
     {
