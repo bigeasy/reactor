@@ -1,6 +1,6 @@
 {
     "name":                 "reactor",
-    "version":              "17.0.0-alpha.18",
+    "version":              "17.0.0-alpha.20",
     "description":
 
       "A fastify server builder.",
@@ -22,7 +22,7 @@
     "dependencies":
     {
                             "extant":                       "2.0.0-alpha.4",
-                            "fastify":                      "3.24.0"
+                            "fastify":                      "3.25.0"
     },
     "devDependencies":
     {
